@@ -124,6 +124,22 @@
 - ✅ Étape 5.1 et 5.2 complétées et confirmées par l'utilisateur (cycle complet testé via `auth.http` et
   `exercises.http`, y compris les cas de séparation entre utilisateurs)
 
+## 2026-07-22 — Étape 5.3 : Sécurisation de MongoDB
+
+- `.env` racine (non versionné) + `.env.example` (versionné) : `MONGO_ROOT_USERNAME`, `MONGO_ROOT_PASSWORD`
+  — chargés automatiquement par Docker Compose (`${VAR}`) depuis un `.env` situé à côté de
+  `docker-compose.yml`, distinct de `backend/.env` (secrets applicatifs lus par `dotenv`)
+- `docker-compose.yml` : service `db` reçoit `MONGO_INITDB_ROOT_USERNAME`/`MONGO_INITDB_ROOT_PASSWORD` ;
+  `MONGO_URI` du service `backend` mis à jour avec les identifiants + `?authSource=admin`
+- Volume `mongo_data` supprimé et recréé (`docker-compose down -v`) — nécessaire car
+  `MONGO_INITDB_ROOT_*` ne s'applique qu'à l'initialisation d'un volume vide (confirmé avec l'utilisateur
+  avant l'exécution, données de test effacées)
+- `README.md` mis à jour : section secrets (deux `.env` distincts), commande de reset DB avec
+  `-u`/`-p`/`--authenticationDatabase admin`, avertissement sur la suppression du volume
+- ✅ Étape 5.3 confirmée : `mongosh` sans identifiants → `MongoServerError: Command find requires
+  authentication` ; avec identifiants (`-u`/`-p`/`--authenticationDatabase admin`) → succès. Backend
+  connecté normalement via le `MONGO_URI` authentifié (`Connected to MongoDB` dans les logs)
+
 ## 2026-07-21 — Accès depuis un iPhone sur le réseau local
 
 - `Config.CORS_ORIGIN` (string unique) remplacé par `Config.CORS_ORIGINS` (tableau, parsé depuis une liste séparée par des virgules) dans `backend/src/config/Config.ts` et `index.ts`, pour accepter plusieurs origines simultanément (Mac via `localhost` + iPhone via IP locale)

@@ -25,17 +25,25 @@ et exécuter des requêtes directement depuis la page.
 
 ### 1. Configurer les secrets
 
-Copier `backend/.env.example` en `backend/.env` et ajuster les valeurs au besoin (une valeur par défaut
-raisonnable est déjà fournie pour le développement local) :
+Deux fichiers `.env` distincts, tous deux non versionnés :
+
+**`backend/.env`** — secrets applicatifs (JWT), lus par le backend via `dotenv` :
 
 ```sh
 cp backend/.env.example backend/.env
 ```
 
-`backend/.env` n'est jamais versionné (voir `.gitignore`). Le dossier `/backend` étant monté en volume dans
-le conteneur (voir `docker-compose.yml`), ce fichier est automatiquement visible par le backend, que ce soit
-via `docker-compose up` ou `npm run dev` en local — aucune variable liée aux secrets n'est définie dans
-`docker-compose.yml`.
+Le dossier `/backend` étant monté en volume dans le conteneur (voir `docker-compose.yml`), ce fichier est
+automatiquement visible par le backend, que ce soit via `docker-compose up` ou `npm run dev` en local.
+
+**`.env`** (racine du projet) — identifiants MongoDB, lus directement par `docker-compose.yml` (substitution
+`${VAR}`, chargée automatiquement par Docker Compose depuis un `.env` situé à côté de lui) :
+
+```sh
+cp .env.example .env
+```
+
+Aucun de ces `.env` ne contient de valeur codée en dur dans un fichier versionné — voir `.gitignore`.
 
 ### 2. Démarrer l'environnement
 
@@ -64,16 +72,33 @@ Le backend est prêt quand les logs affichent la connexion à MongoDB et l'écou
 
 ### 3. Réinitialiser la base de données
 
+Depuis la version avec authentification MongoDB activée (Étape 5.3), toute commande `mongosh` doit fournir
+les identifiants root définis dans le `.env` racine (`MONGO_ROOT_USERNAME` / `MONGO_ROOT_PASSWORD`).
+
 Les fichiers de tests `backend/auth.http` et `backend/exercises.http` supposent des collections vides
 au départ (certains tests créent un utilisateur ou un exercice qui doit être unique). Avant chaque
 exécution complète des tests, vider les collections :
 
 ```sh
-docker exec -it drumtempo-db mongosh drumtempo --eval "db.exercises.deleteMany({}); db.users.deleteMany({})"
+docker exec -it drumtempo-db mongosh drumtempo \
+  -u <MONGO_ROOT_USERNAME> -p <MONGO_ROOT_PASSWORD> --authenticationDatabase admin \
+  --eval "db.exercises.deleteMany({}); db.users.deleteMany({})"
 ```
 
 - `drumtempo-db` est le nom du conteneur MongoDB (défini dans `docker-compose.yml`)
 - `drumtempo` est le nom de la base de données (défini par `MONGO_URI` dans `docker-compose.yml`)
+- `--authenticationDatabase admin` est requis car l'utilisateur root est créé dans la base `admin`
+  (comportement standard de `MONGO_INITDB_ROOT_USERNAME`/`MONGO_INITDB_ROOT_PASSWORD`)
+
+**Important** : les identifiants root ne sont appliqués qu'à l'initialisation d'un volume `mongo_data`
+**vide**. Si tu changes `MONGO_ROOT_USERNAME`/`MONGO_ROOT_PASSWORD` dans `.env` après le premier démarrage,
+il faut supprimer le volume pour que le changement prenne effet :
+
+```sh
+docker-compose down -v && docker-compose up --build
+```
+
+⚠️ Cette commande efface toutes les données de la base (exercices et utilisateurs).
 
 ### 4. Exécuter les tests HTTP
 

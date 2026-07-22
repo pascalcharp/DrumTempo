@@ -4,6 +4,11 @@ services:
     container_name: drumtempo-db
     volumes:
       - mongo_data:/data/db
+    environment:
+      # Ces variables ne prennent effet qu'à l'initialisation d'un volume de données vide —
+      # voir README.md pour la procédure de réinitialisation du volume mongo_data.
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     networks:
       - drumtempo-net
 
@@ -17,7 +22,7 @@ services:
       - /app/node_modules
     environment:
       PORT: 3000
-      MONGO_URI: mongodb://db:27017/drumtempo
+      MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@db:27017/drumtempo?authSource=admin
       # Liste d'origines séparées par des virgules. Ajouter/retirer des IP locales au besoin
       # (ex: pour tester depuis un iPhone sur le même réseau Wi-Fi) — voir README.md
       CORS_ORIGIN: http://localhost:5173,http://192.168.2.61:5173

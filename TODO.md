@@ -63,9 +63,11 @@ en premier (l'auth a besoin d'une gestion de secrets propre dès le départ), pu
   *Test manuel : `git status` ne montre jamais `.env`. L'app démarre correctement avec les valeurs de `.env`.
   ✅ Confirmé le 2026-07-22.*
 
-### 5.3 — Sécurisation de MongoDB
-- [ ] Activer l'authentification MongoDB (utilisateur/mot de passe), même si la base n'est pas publiée sur l'hôte
-  *Test manuel : une connexion sans identifiants échoue.*
+### 5.3 — Sécurisation de MongoDB ✅
+- [x] Activer l'authentification MongoDB (utilisateur/mot de passe), même si la base n'est pas publiée sur l'hôte
+  *Test manuel : une connexion sans identifiants échoue. ✅ Confirmé le 2026-07-22 : `mongosh` sans
+  identifiants → `MongoServerError: Command find requires authentication` ; avec identifiants → succès.
+  Backend connecté normalement via `MONGO_URI` authentifié.*
 
 ### 5.4 — Durcissement HTTP
 - [ ] Ajouter `helmet` (en-têtes de sécurité standards)
