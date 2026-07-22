@@ -79,6 +79,51 @@
 - Implémentation de `ExerciseForm.vue` par l'utilisateur : bug trouvé en revue — `@submit.prevent` posé sur le `<button>` au lieu du `<form>` (l'événement `submit` ne se déclenche que sur le `<form>`), causant un rechargement natif de la page sans appel à l'API. Corrigé.
 - ✅ Étape 4 complétée et confirmée : cycle complet (ajout, +5/-5 BPM, suppression, persistance) fonctionnel de bout en bout
 
+## 2026-07-22 — Étape 5.1 + 5.2 : Authentification & secrets
+
+- Dépendances ajoutées : `bcrypt`, `jsonwebtoken`, `dotenv` (+ types)
+- `backend/.env` (non versionné) + `backend/.env.example` (versionné) : `JWT_SECRET`, `JWT_EXPIRES_IN`,
+  `BCRYPT_SALT_ROUNDS`. `backend/src/env.ts` charge `dotenv` en tout premier dans `index.ts`. `AuthConfig.ts`
+  lit ces variables et lève une erreur au démarrage si `JWT_SECRET` est absent
+- `backend/src/models/User.ts` : schéma `email`/`passwordHash` (`select: false`), hook `pre('save')` pour le
+  hachage bcrypt et méthode `comparePassword` — implémentés par l'utilisateur à partir d'un squelette avec
+  indices
+- `backend/src/middleware/requireAuth.ts` : extraction/vérification du JWT (`Authorization: Bearer`),
+  attache `req.userId` — implémenté par l'utilisateur. Type `Express.Request.userId` ajouté par déclaration
+  globale dans `backend/src/types/express.d.ts`
+- `backend/src/routes/authRoutes.ts` : `POST /register` et `POST /login`, documentés en OpenAPI (avec
+  schéma de sécurité `bearerAuth` ajouté à `swaggerSpec.ts` et appliqué aux 4 routes `/api/exercises`) —
+  implémentés par l'utilisateur
+- Décision de conception (validée avec l'utilisateur) : unicité du nom d'exercice passée de globale à
+  scopée par utilisateur (index composé `{ name, owner }` sur `Exercise`), pour que deux utilisateurs
+  puissent chacun avoir un exercice du même nom (ex. "Paradiddle")
+- Toutes les routes `/api/exercises` protégées par `requireAuth` dans `index.ts` ; filtrage/assignation par
+  `owner` implémenté par l'utilisateur dans les 4 handlers de `exerciseRoutes.ts`
+- Bugs trouvés en revue et corrigés par l'utilisateur pendant l'implémentation :
+  - Hook `pre('save')` mélangeant callback (`next`) et `async/await` sans `try/catch` : une erreur dans
+    `bcrypt.hash` n'aurait jamais appelé `next()`, bloquant `.save()` indéfiniment. Corrigé avec un
+    `try/catch` explicite (`next()` / `next(err)`)
+  - `POST /register` : bloc de code mort laissé après le `try/catch` (ancien commentaire TODO), causant un
+    double envoi de réponse (`ERR_HTTP_HEADERS_SENT`) à chaque appel ; absence de `return` après le 400 de
+    validation du mot de passe, qui n'empêchait donc pas la création malgré un mot de passe trop court
+  - `POST /login` : même bloc de code mort laissant le `try` sans `catch`, erreur de syntaxe
+  - `jwt.sign` : erreur de surcharge TypeScript sur `expiresIn` (`AuthConfig.JWT_EXPIRES_IN` typé `string`
+    générique, incompatible avec le type `StringValue` attendu par `@types/jsonwebtoken`) — résolu par une
+    assertion de type au point d'appel
+  - `PATCH /api/exercises/:id` : destructuration `const {ownerToDiscard, ...updates}` qui ne retirait pas
+    réellement `owner` de `req.body` (clé inexistante) ; et `updates` glissé par erreur à l'intérieur du
+    filtre de `findOneAndUpdate` au lieu d'être passé comme deuxième argument séparé — rendait la route
+    non fonctionnelle à 100 % (404 systématique), corrigé par l'utilisateur
+- `backend/auth.http` créé (inscription/connexion, cas valides et invalides, deux utilisateurs A/B) ;
+  `backend/exercises.http` mis à jour (token requis sur toutes les requêtes, cas croisés userA/userB pour
+  valider l'absence de fuite entre propriétaires)
+- `README.md` mis à jour : section "Configurer les secrets", reset DB incluant `users`, tableaux de tests
+  pour `auth.http` et `exercises.http`
+- Ajout à `CLAUDE.md`, à la demande de l'utilisateur : "La lisibilité est une PRIORITÉ ABSOLUE" dans la
+  section Style de programmation
+- ✅ Étape 5.1 et 5.2 complétées et confirmées par l'utilisateur (cycle complet testé via `auth.http` et
+  `exercises.http`, y compris les cas de séparation entre utilisateurs)
+
 ## 2026-07-21 — Accès depuis un iPhone sur le réseau local
 
 - `Config.CORS_ORIGIN` (string unique) remplacé par `Config.CORS_ORIGINS` (tableau, parsé depuis une liste séparée par des virgules) dans `backend/src/config/Config.ts` et `index.ts`, pour accepter plusieurs origines simultanément (Mac via `localhost` + iPhone via IP locale)

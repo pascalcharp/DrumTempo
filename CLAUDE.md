@@ -56,6 +56,7 @@ La liste des modifications faites est consignée dans le fichier DEVLOG.md
 Accompagner chaque commit d'un message clair et descriptif qu'un humain comprend facilement.
 
 ## Style de programmation
+La lisibilité est une PRIORITÉ ABSOLUE.
 
 AUCUNE constante codée en dur dans le code source.  Toute constante est consignée dans une classe appropriée: soit une
 classe créée à cet effet, soit une classe existante ayant un lien logique avec la constante.

@@ -30,6 +30,7 @@ import { ExerciseConfig } from '../config/ExerciseConfig';
 export interface IExercise extends Document {
   name: string;
   current_tempo: number | null;
+  owner: mongoose.Types.ObjectId;
   updated_at: Date;
 }
 
@@ -38,7 +39,6 @@ const ExerciseSchema = new Schema<IExercise>(
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
       maxlength: ExerciseConfig.NAME_MAX_LENGTH,
     },
@@ -51,8 +51,17 @@ const ExerciseSchema = new Schema<IExercise>(
         message: `Le tempo doit être entre ${ExerciseConfig.TEMPO_MIN} et ${ExerciseConfig.TEMPO_MAX} BPM`,
       },
     },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
   },
   { timestamps: { updatedAt: 'updated_at', createdAt: false } }
 );
+
+// Le nom est unique par utilisateur, pas globalement : deux utilisateurs peuvent
+// chacun avoir un exercice "Paradiddle".
+ExerciseSchema.index({ name: 1, owner: 1 }, { unique: true });
 
 export const Exercise = mongoose.model<IExercise>('Exercise', ExerciseSchema);

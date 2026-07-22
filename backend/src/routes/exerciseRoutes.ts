@@ -10,6 +10,8 @@ const router = Router();
  *   get:
  *     summary: Lister tous les exercices
  *     tags: [Exercises]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Liste des exercices
@@ -19,12 +21,14 @@ const router = Router();
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Exercise'
+ *       401:
+ *         description: Authentification requise ou token invalide
  *       500:
  *         description: Erreur serveur
  */
-router.get('/', async (_req: Request, res: Response): Promise<void> => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const liste = await Exercise.find({}).lean()
+    const liste = await Exercise.find({owner: req.userId}).lean()
     res.json(liste) ;
   } catch (err) {
     console.error(err) ;
@@ -38,6 +42,8 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
  *   post:
  *     summary: Ajouter un exercice
  *     tags: [Exercises]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -64,14 +70,18 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
  *         description: Donnée invalide (ex. tempo hors plage 40-300)
  *       409:
  *         description: Nom déjà utilisé
+ *       401:
+ *         description: Authentification requise ou token invalide
  *       500:
  *         description: Erreur serveur
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const nouvelExercice = new Exercise(req.body) ;
+
+    const nouvelExercice = new Exercise({...req.body, owner: req.userId}) ;
     const exerciceSauvegarde = await nouvelExercice.save() ;
     res.status(201).json(exerciceSauvegarde) ;
+
   } catch (err: any) {
     console.error(err);
     switch (true) {
@@ -95,6 +105,8 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
  *   patch:
  *     summary: Mettre à jour un exercice (ex. le tempo)
  *     tags: [Exercises]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -126,14 +138,19 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
  *         description: Exercice introuvable
  *       409:
  *         description: Nom déjà utilisé
+ *       401:
+ *         description: Authentification requise ou token invalide
  *       500:
  *         description: Erreur serveur
  */
 router.patch('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const exerciceActualise = await Exercise.findByIdAndUpdate(req.params.id, req.body, { runValidators: true, new: true }) ;
+
+    const {owner, ...updates} = req.body ;
+    const exerciceActualise = await Exercise.findOneAndUpdate({ _id: req.params.id, owner: req.userId }, updates,  { runValidators: true, new: true }) ;
     if (exerciceActualise == null) res.status(404).json({ message: ExerciseConfig.MSG_NOT_FOUND_UPDATE }) ;
     else res.json(exerciceActualise) ;
+
   } catch (err: any) {
     console.error(err);
     switch (true) {
@@ -162,6 +179,8 @@ router.patch('/:id', async (req: Request, res: Response): Promise<void> => {
  *   delete:
  *     summary: Supprimer un exercice
  *     tags: [Exercises]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -176,14 +195,18 @@ router.patch('/:id', async (req: Request, res: Response): Promise<void> => {
  *         description: Id malformé
  *       404:
  *         description: Exercice introuvable
+ *       401:
+ *         description: Authentification requise ou token invalide
  *       500:
  *         description: Erreur serveur
  */
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const exerciceSupprime = await Exercise.findByIdAndDelete(req.params.id) ;
+
+    const exerciceSupprime = await Exercise.findOneAndDelete({ _id: req.params.id, owner: req.userId }) ;
     if (exerciceSupprime == null) res.status(404).json({ message: ExerciseConfig.MSG_NOT_FOUND_DELETE }) ;
     else res.status(204).send() ;
+
   } catch (err: any) {
     console.error(err);
     if (err.name === 'CastError') res.status(400).json({ message: ExerciseConfig.MSG_INVALID_ID });

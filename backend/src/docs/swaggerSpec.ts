@@ -11,6 +11,15 @@ const options: swaggerJsdoc.Options = {
       description: SwaggerConfig.DESCRIPTION,
     },
     servers: [{ url: `http://localhost:${Config.PORT}` }],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
   },
   apis: SwaggerConfig.API_FILES_GLOB,
 };

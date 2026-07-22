@@ -23,7 +23,21 @@ et exécuter des requêtes directement depuis la page.
 - Docker et Docker Compose installés
 - WebStorm (ou une autre IDE JetBrains) pour l'outil HTTP intégré
 
-### 1. Démarrer l'environnement
+### 1. Configurer les secrets
+
+Copier `backend/.env.example` en `backend/.env` et ajuster les valeurs au besoin (une valeur par défaut
+raisonnable est déjà fournie pour le développement local) :
+
+```sh
+cp backend/.env.example backend/.env
+```
+
+`backend/.env` n'est jamais versionné (voir `.gitignore`). Le dossier `/backend` étant monté en volume dans
+le conteneur (voir `docker-compose.yml`), ce fichier est automatiquement visible par le backend, que ce soit
+via `docker-compose up` ou `npm run dev` en local — aucune variable liée aux secrets n'est définie dans
+`docker-compose.yml`.
+
+### 2. Démarrer l'environnement
 
 Depuis la racine du projet :
 
@@ -48,42 +62,64 @@ et le backend plante avec `Cannot find module '...'`.
 Le backend est prêt quand les logs affichent la connexion à MongoDB et l'écoute sur le port 3000
 (`docker-compose logs -f backend`).
 
-### 2. Réinitialiser la base de données
+### 3. Réinitialiser la base de données
 
-Le fichier de tests `backend/exercises.http` suppose une collection `exercises` vide au départ
-(certains tests créent un exercice nommé "Paradiddle", qui doit être unique). Avant chaque exécution
-complète des tests, vider la collection :
+Les fichiers de tests `backend/auth.http` et `backend/exercises.http` supposent des collections vides
+au départ (certains tests créent un utilisateur ou un exercice qui doit être unique). Avant chaque
+exécution complète des tests, vider les collections :
 
 ```sh
-docker exec -it drumtempo-db mongosh drumtempo --eval "db.exercises.deleteMany({})"
+docker exec -it drumtempo-db mongosh drumtempo --eval "db.exercises.deleteMany({}); db.users.deleteMany({})"
 ```
 
 - `drumtempo-db` est le nom du conteneur MongoDB (défini dans `docker-compose.yml`)
 - `drumtempo` est le nom de la base de données (défini par `MONGO_URI` dans `docker-compose.yml`)
 
-### 3. Exécuter les tests HTTP
+### 4. Exécuter les tests HTTP
 
-1. Ouvrir `backend/exercises.http` dans WebStorm.
-2. Exécuter les requêtes **dans l'ordre**, du haut vers le bas, en cliquant sur le bouton "Run" (▷)
-   au-dessus de chaque requête. L'ordre est important : la requête #2 capture l'id de l'exercice créé
-   dans une variable globale (`exerciceId`), réutilisée par les requêtes #6 et #8.
-3. Valider les codes de statut retournés par chaque requête :
+1. Ouvrir `backend/auth.http` dans WebStorm et exécuter les requêtes **dans l'ordre**, du haut vers le
+   bas, en cliquant sur le bouton "Run" (▷) au-dessus de chaque requête. Les requêtes #6 et #7 capturent
+   les tokens JWT des utilisateurs A et B dans des variables globales (`tokenUserA`, `tokenUserB`),
+   réutilisées par `exercises.http`.
+2. Ouvrir ensuite `backend/exercises.http` et exécuter les requêtes dans l'ordre. La requête #2 capture
+   l'id de l'exercice créé dans une variable globale (`exerciceId`), réutilisée par les requêtes suivantes.
+3. Valider les codes de statut retournés par chaque requête.
 
-| # | Requête                                    | Code attendu |
-|---|---------------------------------------------|--------------|
-| 1 | `GET` — lister les exercices                | 200          |
-| 2 | `POST` — exercice valide (avec tempo)        | 201          |
-| 3 | `POST` — exercice valide (sans tempo)        | 201          |
-| 4 | `POST` — tempo hors plage (< 40)             | 400          |
-| 5 | `POST` — nom dupliqué ("Paradiddle")         | 409          |
-| 6 | `PATCH` — mise à jour du tempo               | 200          |
-| 7 | `PATCH` — id inexistant (bien formé)         | 404          |
-| 8 | `DELETE` — suppression de l'exercice créé    | 204          |
-| 9 | `DELETE` — id inexistant (bien formé)        | 404          |
-| 10| `PATCH` — id malformé (`id-invalide`)        | 400          |
+`auth.http` :
 
-Si les tests 4, 5 ou 10 retournent 500 au lieu du code attendu, le backend tourne probablement sur une
-image Docker périmée — relancer avec `docker-compose up --build`.
+| # | Requête                                          | Code attendu |
+|---|---------------------------------------------------|--------------|
+| 1 | `POST /register` — inscription valide (userA)      | 201          |
+| 2 | `POST /register` — email déjà utilisé              | 409          |
+| 3 | `POST /register` — mot de passe trop court         | 400          |
+| 4 | `POST /register` — email mal formé                 | 400          |
+| 5 | `POST /register` — inscription valide (userB)      | 201          |
+| 6 | `POST /login` — connexion valide (userA)           | 200          |
+| 7 | `POST /login` — connexion valide (userB)           | 200          |
+| 8 | `POST /login` — mauvais mot de passe               | 401          |
+| 9 | `POST /login` — email inconnu                      | 401          |
+
+`exercises.http` :
+
+| #  | Requête                                                | Code attendu |
+|----|---------------------------------------------------------|--------------|
+| 0  | `GET` — sans token                                       | 401          |
+| 1  | `GET` — lister les exercices (userA)                     | 200          |
+| 2  | `POST` — exercice valide (avec tempo)                    | 201          |
+| 3  | `POST` — exercice valide (sans tempo)                    | 201          |
+| 4  | `POST` — tempo hors plage (< 40)                         | 400          |
+| 5  | `POST` — nom dupliqué pour le même utilisateur           | 409          |
+| 5b | `POST` — même nom, autre utilisateur (userB)             | 201          |
+| 6  | `PATCH` — mise à jour du tempo (userA sur son exercice)  | 200          |
+| 6b | `PATCH` — userB sur l'exercice de userA                  | 404          |
+| 7  | `PATCH` — id inexistant (bien formé)                     | 404          |
+| 7b | `DELETE` — userB sur l'exercice de userA                 | 404          |
+| 8  | `DELETE` — suppression de l'exercice, par userA           | 204          |
+| 9  | `DELETE` — id inexistant (bien formé)                    | 404          |
+| 10 | `PATCH` — id malformé (`id-invalide`)                    | 400          |
+
+Si des tests retournent 500 au lieu du code attendu, le backend tourne probablement sur une image Docker
+périmée — relancer avec `docker-compose up --build`.
 
 ## Frontend — Tester sur un iPhone (même réseau Wi-Fi)
 

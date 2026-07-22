@@ -46,21 +46,22 @@ Contexte : l'app pourrait un jour être exposée au-delà du réseau local (dist
 L'authentification devient donc une fondation, pas une option. Ordre recommandé : 5.1 et 5.2 ensemble
 en premier (l'auth a besoin d'une gestion de secrets propre dès le départ), puis 5.3 à 5.7, puis 5.8.
 
-### 5.1 — Authentification & autorisation
-- [ ] Modèle `User` (Mongoose) : email, mot de passe hashé avec `bcrypt`
-- [ ] Route `POST /api/auth/register` (inscription)
-- [ ] Route `POST /api/auth/login` (connexion, émission d'un JWT)
-- [ ] Middleware `requireAuth` protégeant toutes les routes `/api/exercises`
-- [ ] Champ `owner` (userId) sur le modèle `Exercise`, filtrage des requêtes par propriétaire
-- [ ] Classe de config `AuthConfig` (secret JWT, durée d'expiration, coût `bcrypt`) — rien codé en dur
+### 5.1 — Authentification & autorisation ✅
+- [x] Modèle `User` (Mongoose) : email, mot de passe hashé avec `bcrypt`
+- [x] Route `POST /api/auth/register` (inscription)
+- [x] Route `POST /api/auth/login` (connexion, émission d'un JWT)
+- [x] Middleware `requireAuth` protégeant toutes les routes `/api/exercises`
+- [x] Champ `owner` (userId) sur le modèle `Exercise`, filtrage des requêtes par propriétaire
+- [x] Classe de config `AuthConfig` (secret JWT, durée d'expiration, coût `bcrypt`) — rien codé en dur
   *Test manuel : requête sans token sur `/api/exercises` → 401. Token valide d'un autre utilisateur → 404 sur
   les exercices d'autrui (pas de fuite d'existence). Inscription/connexion testées via un nouveau fichier
-  `.http` (ou ajouts à `exercises.http`).*
+  `.http` (ou ajouts à `exercises.http`). ✅ Confirmé le 2026-07-22.*
 
-### 5.2 — Secrets & configuration
-- [ ] `.env` non versionné pour les secrets locaux (JWT_SECRET, identifiants Mongo)
-- [ ] `.env.example` versionné comme documentation des variables attendues
-  *Test manuel : `git status` ne montre jamais `.env`. L'app démarre correctement avec les valeurs de `.env`.*
+### 5.2 — Secrets & configuration ✅
+- [x] `.env` non versionné pour les secrets locaux (JWT_SECRET — identifiants Mongo à ajouter à l'Étape 5.3)
+- [x] `.env.example` versionné comme documentation des variables attendues
+  *Test manuel : `git status` ne montre jamais `.env`. L'app démarre correctement avec les valeurs de `.env`.
+  ✅ Confirmé le 2026-07-22.*
 
 ### 5.3 — Sécurisation de MongoDB
 - [ ] Activer l'authentification MongoDB (utilisateur/mot de passe), même si la base n'est pas publiée sur l'hôte

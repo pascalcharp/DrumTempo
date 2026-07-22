@@ -1,14 +1,21 @@
 ### Fichier de tests HTTP reproductibles pour l'API /api/exercises
 ### À exécuter avec l'outil HTTP intégré de WebStorm (clic sur "Run" au-dessus de chaque requête)
 ### Prérequis : backend démarré (docker-compose up, ou npm run dev dans /backend)
+### IMPORTANT : exécuter d'abord auth.http (requêtes 1, 5, 6, 7) dans la même session pour peupler
+### les variables globales tokenUserA / tokenUserB — toutes les routes ci-dessous sont protégées.
 
 @baseUrl = http://localhost:3000/api/exercises
 
-### 1. Lister les exercices (doit répondre 200 avec un tableau, potentiellement vide)
+### 0. Sans token (401 attendu)
 GET {{baseUrl}}
 
-### 2. Ajouter un exercice valide (201 attendu)
+### 1. Lister les exercices de l'utilisateur A (200 attendu, tableau potentiellement vide)
+GET {{baseUrl}}
+Authorization: Bearer {{tokenUserA}}
+
+### 2. Ajouter un exercice valide pour l'utilisateur A (201 attendu)
 POST {{baseUrl}}
+Authorization: Bearer {{tokenUserA}}
 Content-Type: application/json
 
 {
@@ -22,6 +29,7 @@ Content-Type: application/json
 
 ### 3. Ajouter un exercice sans tempo (201 attendu, current_tempo = null)
 POST {{baseUrl}}
+Authorization: Bearer {{tokenUserA}}
 Content-Type: application/json
 
 {
@@ -30,6 +38,7 @@ Content-Type: application/json
 
 ### 4. Ajouter un exercice avec un tempo trop bas (400 attendu, < TEMPO_MIN = 40)
 POST {{baseUrl}}
+Authorization: Bearer {{tokenUserA}}
 Content-Type: application/json
 
 {
@@ -37,8 +46,9 @@ Content-Type: application/json
   "current_tempo": 10
 }
 
-### 5. Ajouter un exercice avec un nom dupliqué (409 attendu)
+### 5. Ajouter un exercice avec un nom dupliqué pour le MÊME utilisateur (409 attendu)
 POST {{baseUrl}}
+Authorization: Bearer {{tokenUserA}}
 Content-Type: application/json
 
 {
@@ -46,30 +56,60 @@ Content-Type: application/json
   "current_tempo": 100
 }
 
+### 5b. Ajouter un exercice avec le MÊME nom mais pour l'utilisateur B (201 attendu —
+### l'unicité du nom est désormais par utilisateur, pas globale)
+POST {{baseUrl}}
+Authorization: Bearer {{tokenUserB}}
+Content-Type: application/json
+
+{
+  "name": "Paradiddle",
+  "current_tempo": 80
+}
+
 ### 6. Mettre à jour le tempo de l'exercice créé à l'étape 2 (200 attendu)
 PATCH {{baseUrl}}/{{exerciceId}}
+Authorization: Bearer {{tokenUserA}}
 Content-Type: application/json
 
 {
   "current_tempo": 140
+}
+
+### 6b. L'utilisateur B tente de mettre à jour l'exercice de l'utilisateur A (404 attendu,
+### pas 403 — ne pas révéler que l'exercice existe chez quelqu'un d'autre)
+PATCH {{baseUrl}}/{{exerciceId}}
+Authorization: Bearer {{tokenUserB}}
+Content-Type: application/json
+
+{
+  "current_tempo": 200
 }
 
 ### 7. Mettre à jour un exercice inexistant (404 attendu)
 PATCH {{baseUrl}}/000000000000000000000000
+Authorization: Bearer {{tokenUserA}}
 Content-Type: application/json
 
 {
   "current_tempo": 140
 }
 
-### 8. Supprimer l'exercice créé à l'étape 2 (204 attendu)
+### 7b. L'utilisateur B tente de supprimer l'exercice de l'utilisateur A (404 attendu)
 DELETE {{baseUrl}}/{{exerciceId}}
+Authorization: Bearer {{tokenUserB}}
+
+### 8. Supprimer l'exercice créé à l'étape 2, par son propriétaire réel (204 attendu)
+DELETE {{baseUrl}}/{{exerciceId}}
+Authorization: Bearer {{tokenUserA}}
 
 ### 9. Supprimer un exercice inexistant (404 attendu)
 DELETE {{baseUrl}}/000000000000000000000000
+Authorization: Bearer {{tokenUserA}}
 
 ### 10. Mettre à jour avec un id malformé (400 attendu)
 PATCH {{baseUrl}}/id-invalide
+Authorization: Bearer {{tokenUserA}}
 Content-Type: application/json
 
 {
