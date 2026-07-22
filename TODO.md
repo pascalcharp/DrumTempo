@@ -38,4 +38,54 @@
 - [x] Développer le formulaire d'ajout d'un exercice
 - [x] Ajouter le bouton de suppression d'un exercice
 - [x] Orchestrer les composants dans `App.vue` (chargement au montage, handlers d'ajout/ajustement/suppression)
-  *Test manuel : Ouvrir l'application sur le simulateur iPhone de l'IDE ou un appareil connecté et tester le cycle complet (ajout, +5/-5 BPM, suppression, persistance après rafraîchissement). ✅ Confirmé le 2026-07-21 — cycle complet fonctionnel.*1    
+  *Test manuel : Ouvrir l'application sur le simulateur iPhone de l'IDE ou un appareil connecté et tester le cycle complet (ajout, +5/-5 BPM, suppression, persistance après rafraîchissement). ✅ Confirmé le 2026-07-21 — cycle complet fonctionnel.*
+
+## Étape 5 : Sécurité (durcissement selon les standards de l'industrie)
+
+Contexte : l'app pourrait un jour être exposée au-delà du réseau local (distribution, but pédagogique).
+L'authentification devient donc une fondation, pas une option. Ordre recommandé : 5.1 et 5.2 ensemble
+en premier (l'auth a besoin d'une gestion de secrets propre dès le départ), puis 5.3 à 5.7, puis 5.8.
+
+### 5.1 — Authentification & autorisation
+- [ ] Modèle `User` (Mongoose) : email, mot de passe hashé avec `bcrypt`
+- [ ] Route `POST /api/auth/register` (inscription)
+- [ ] Route `POST /api/auth/login` (connexion, émission d'un JWT)
+- [ ] Middleware `requireAuth` protégeant toutes les routes `/api/exercises`
+- [ ] Champ `owner` (userId) sur le modèle `Exercise`, filtrage des requêtes par propriétaire
+- [ ] Classe de config `AuthConfig` (secret JWT, durée d'expiration, coût `bcrypt`) — rien codé en dur
+  *Test manuel : requête sans token sur `/api/exercises` → 401. Token valide d'un autre utilisateur → 404 sur
+  les exercices d'autrui (pas de fuite d'existence). Inscription/connexion testées via un nouveau fichier
+  `.http` (ou ajouts à `exercises.http`).*
+
+### 5.2 — Secrets & configuration
+- [ ] `.env` non versionné pour les secrets locaux (JWT_SECRET, identifiants Mongo)
+- [ ] `.env.example` versionné comme documentation des variables attendues
+  *Test manuel : `git status` ne montre jamais `.env`. L'app démarre correctement avec les valeurs de `.env`.*
+
+### 5.3 — Sécurisation de MongoDB
+- [ ] Activer l'authentification MongoDB (utilisateur/mot de passe), même si la base n'est pas publiée sur l'hôte
+  *Test manuel : une connexion sans identifiants échoue.*
+
+### 5.4 — Durcissement HTTP
+- [ ] Ajouter `helmet` (en-têtes de sécurité standards)
+- [ ] Limiter explicitement la taille des payloads JSON
+- [ ] Ajouter un rate-limiter (`express-rate-limit`) sur les routes API
+  *Test manuel : `curl -I` montre les en-têtes de sécurité. Après un grand nombre de requêtes rapides, le
+  serveur répond 429.*
+
+### 5.5 — Validation et sanitation des entrées
+- [ ] Vérifier/renforcer le mode strict de Mongoose contre l'injection de champs arbitraires
+  *Test manuel : envoyer des payloads malveillants (opérateurs Mongo, tempo non numérique, chaînes très
+  longues) via `exercises.http` → rejet propre en 400, jamais de crash serveur.*
+
+### 5.6 — Durcissement Docker
+- [ ] Utilisateur non-root dans les `Dockerfile` (backend et frontend)
+  *Test manuel : `docker exec drumtempo-backend whoami` retourne un utilisateur non-root.*
+
+### 5.7 — Dépendances
+- [ ] `npm audit` sur `/frontend` et `/backend`, corriger les vulnérabilités trouvées
+  *Test manuel : `npm audit` ne retourne plus de vulnérabilité high/critical.*
+
+### 5.8 — HTTPS (documentation seulement pour l'instant)
+- [ ] Documenter dans `README.md` les étapes nécessaires pour un vrai déploiement (reverse proxy + certificat) —
+  non implémenté dans le `docker-compose.yml` local actuel1    
