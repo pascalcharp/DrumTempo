@@ -1,0 +1,47 @@
+services:
+  db:
+    image: mongo:7
+    container_name: drumtempo-db
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - drumtempo-net
+
+  backend:
+    container_name: drumtempo-backend
+    build: ./backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      PORT: 3000
+      MONGO_URI: mongodb://db:27017/drumtempo
+      # Liste d'origines séparées par des virgules. Ajouter/retirer des IP locales au besoin
+      # (ex: pour tester depuis un iPhone sur le même réseau Wi-Fi) — voir README.md
+      CORS_ORIGIN: http://localhost:5173,http://192.168.2.61:5173
+    depends_on:
+      - db
+    networks:
+      - drumtempo-net
+
+  frontend:
+    container_name: drumtempo-frontend
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      # IP locale du Mac (et non "localhost") : ce sera résolu par le navigateur du client
+      # (iPhone ou autre appareil), pas par le conteneur — voir README.md
+      VITE_API_URL: http://192.168.2.61:3000
+    depends_on:
+      - backend
+    networks:
+      - drumtempo-net
+
+volumes:
+  mongo_data:
+
+networks:
+  drumtempo-net:
