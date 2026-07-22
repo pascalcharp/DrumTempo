@@ -173,6 +173,89 @@ pointer vers l'IP locale de l'ordinateur plutôt que `localhost` :
 depuis le téléphone après un certain temps, revalider l'IP avec `ipconfig getifaddr en0` et mettre à jour
 `docker-compose.yml` en conséquence.
 
+## Déploiement en production (architecture cible — non implémentée)
+
+**Statut : documentation seulement.** Rien ci-dessous n'est en place dans `docker-compose.yml` — c'est la
+référence à suivre le jour où un vrai déploiement public sera fait, une fois l'Étape 6 (tests automatisés,
+voir `TODO.md`) complétée. Contexte : projet étudiant à but pédagogique, faible charge attendue, mais
+l'objectif est d'appliquer de vraies pratiques "grade production" plutôt que de couper les coins ronds,
+tout en gardant un coût minime.
+
+### Vue d'ensemble
+
+```
+[ iPhone / navigateur ] → HTTPS (TLS 1.3)
+        ▼
+[ Cloudflare ]  — DNS, WAF, CDN, anti-DDoS (plan gratuit)
+        ├──▶ app.tondomaine.com ──▶ [ Vercel/Netlify ]  (build statique Vue.js, gratuit)
+        └──▶ api.tondomaine.com ──▶ [ VPS Linux ] (Hetzner/DigitalOcean/OVH, ~5$/mois)
+                                          ├─ Caddy (reverse proxy, TLS via certificat
+                                          │  Cloudflare Origin CA — mode "Full strict")
+                                          └─ Conteneur backend (déjà durci : helmet,
+                                             rate-limit, non-root, Mongo authentifié)
+                                                ▼ TLS (mongodb+srv://)
+                                          [ MongoDB Atlas M0 ]  (gratuit, managé, isolé)
+```
+
+**Coût estimé : ~5-7$/mois** — le VPS (~4-6$/mois) et le nom de domaine (~1$/mois amorti) sont les seuls
+postes payants. Cloudflare, Vercel/Netlify, MongoDB Atlas M0 et GitHub Actions sont gratuits à cette échelle.
+
+**Pourquoi cette répartition** :
+- Le frontend est une SPA compilée en fichiers statiques — un CDN gratuit (Vercel/Netlify) la sert mieux
+  qu'un serveur maison, sans le coût de le gérer soi-même
+- Le backend reste sur un VPS Docker plutôt qu'en serverless : il est déjà écrit et déjà durci (Étape 5),
+  le réécrire en fonctions serverless serait un détour pédagogique inutile
+- MongoDB Atlas plutôt qu'un Mongo auto-hébergé sur le VPS : évite la responsabilité opérationnelle
+  (patchs, sauvegardes, monitoring de la base) — et illustre une pratique "grade production" courante,
+  séparer la base de l'infrastructure applicative
+
+### Le point clé : Cloudflare seul ne donne pas de HTTPS de bout en bout
+
+Cloudflare chiffre la connexion entre le client et son propre edge — mais le segment **Cloudflare → origine**
+(Vercel et le VPS) est un deuxième saut séparé, avec son propre mode de chiffrement configurable côté
+Cloudflare :
+
+- **Flexible** : Cloudflare↔origine en HTTP simple, non chiffré — à proscrire ici (JWT et mots de passe transitent)
+- **Full** : HTTPS entre Cloudflare et l'origine, mais avec n'importe quel certificat, même non validé
+- **Full (strict)** : HTTPS avec un certificat valide sur l'origine — c'est le mode requis pour un vrai
+  chiffrement de bout en bout
+
+Vercel/Netlify gèrent ça nativement. Pour le VPS, ça implique d'installer **Caddy** en reverse proxy devant
+le conteneur backend, avec un certificat **Cloudflare Origin CA** (gratuit, généré depuis le dashboard
+Cloudflare, valide spécifiquement pour le segment Cloudflare↔origine — pas besoin de Let's Encrypt ici).
+
+### Ajustements de configuration nécessaires le jour du déploiement
+
+- `Config.CORS_ORIGINS` (backend) : remplacer les origines locales par `https://app.tondomaine.com`
+- `VITE_API_URL` (frontend) : variable de build configurée dans le dashboard Vercel/Netlify, pointant vers
+  `https://api.tondomaine.com`
+- `MONGO_URI` (backend) : remplacer par la chaîne `mongodb+srv://...` fournie par Atlas (TLS activé par
+  défaut, pas besoin de `?authSource=admin` comme en local)
+- Retirer le service `db` de `docker-compose.yml` sur le VPS — Atlas le remplace entièrement
+- Sur Atlas : restreindre l'accès réseau à l'IP du VPS uniquement (pas `0.0.0.0/0`), créer un utilisateur DB
+  dédié avec accès limité à la base `drumtempo` plutôt qu'un compte admin du cluster
+
+### Secrets en production
+
+Plus de `.env` de développeur sur une machine locale. Les secrets (`JWT_SECRET`, chaîne de connexion Atlas)
+doivent être injectés comme variables d'environnement au niveau du VPS (permissions de fichier restreintes)
+ou via un gestionnaire de secrets (ex: Doppler, 1Password, Vault) — jamais committés, jamais dans une image
+Docker.
+
+### Limite du tier gratuit Atlas (M0)
+
+Le tier M0 **n'inclut pas les sauvegardes automatiques** (fonctionnalité payante à partir du tier M10).
+Pour ce projet, c'est acceptable tel quel vu le faible enjeu — mais une alternative peu coûteuse existe si
+une vraie posture de sauvegarde est souhaitée : un script `mongodump` planifié (cron) qui pousse une
+sauvegarde vers un stockage objet bon marché (ex: Backblaze B2, quelques cents/mois).
+
+### Principe du pipeline CI/CD
+
+GitHub Actions (gratuit à cette échelle) exécute la suite de tests (Étape 6) à chaque push/PR. Une fois
+l'Étape 6 en place, le déploiement peut être conditionné à des tests verts : build + push de l'image Docker
+backend vers le VPS, et déploiement automatique du frontend par Vercel/Netlify (déclenché nativement par un
+push sur la branche principale, sans configuration additionnelle côté GitHub Actions).
+
 ## Recommended IDE Setup
 
 [VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).

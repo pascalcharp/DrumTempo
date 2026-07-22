@@ -195,6 +195,41 @@
   `node` dans les deux conteneurs ; aucune erreur de permission dans les logs ; test de fumée complet
   (register → login → création d'exercice → liste) confirmé via `curl` après le changement d'utilisateur
 
+## 2026-07-22 — Étape 5.7 : Audit des dépendances
+
+- `npm audit` sur `/backend` et `/frontend` : `0 vulnerabilities` dans les deux projets, aucun correctif
+  nécessaire
+- ✅ Étape 5.7 confirmée
+
+## 2026-07-22 — Décision d'architecture de déploiement + réordonnancement du plan
+
+- Architecture de déploiement production retenue (but pédagogique, coût minime, ~5-7$/mois) : Cloudflare
+  (DNS/WAF/CDN) → Vercel/Netlify (frontend statique) + VPS Linux avec Caddy + conteneur backend → MongoDB
+  Atlas M0 (TLS natif). Détails et raisonnement complet documentés dans `TODO.md` (Étape 5.8)
+- Point technique clé identifié : Cloudflare seul ne donne pas de HTTPS de bout en bout — le segment
+  Cloudflare→origine doit être en mode "Full (strict)" avec un certificat validé sur l'origine (Caddy +
+  certificat Cloudflare Origin CA sur le VPS), sinon ce segment reste soit non chiffré ("Flexible"), soit
+  chiffré avec un certificat non validé ("Full")
+- Étape 5.8 reformulée : reste documentation seulement (comme prévu à l'origine), mais maintenant concrète
+  (architecture ci-dessus) plutôt que générique ("reverse proxy + certificat")
+- **Nouvelle Étape 6 ajoutée, avant tout déploiement réel** : tests automatisés (Vitest partout,
+  `supertest` + `mongodb-memory-server` côté backend, `@vue/test-utils` côté frontend, CI GitHub Actions).
+  Décision motivée par le constat que chaque changement d'infrastructure de l'Étape 5 (rate-limiter,
+  utilisateur Docker non-root, `sanitizeFilter`) a dû être revalidé manuellement via `auth.http`/
+  `exercises.http` — une suite automatisée capture cette couverture une fois pour toutes
+- Le déploiement réel de l'architecture ci-dessus devient une future Étape 7 (pas encore détaillée),
+  volontairement après l'Étape 6
+
+## 2026-07-22 — Étape 5.8 : Documentation de l'architecture de déploiement
+
+- Section "Déploiement en production (architecture cible — non implémentée)" ajoutée au `README.md` :
+  diagramme, raisonnement du mode Cloudflare "Full (strict)" + Caddy/Origin CA, tableau de coûts,
+  ajustements de config à faire le jour venu (`CORS_ORIGINS`, `VITE_API_URL`, `MONGO_URI` Atlas, retrait du
+  service `db`), gestion des secrets en prod, limite du tier gratuit Atlas M0 (pas de sauvegarde
+  automatique) et alternative `mongodump`, principe du pipeline CI/CD
+- ✅ **Étape 5 (Sécurité) entièrement complétée** (5.1 à 5.8) — reste au stade documentation pour le
+  déploiement réel, qui attend l'Étape 6
+
 ## 2026-07-21 — Accès depuis un iPhone sur le réseau local
 
 - `Config.CORS_ORIGIN` (string unique) remplacé par `Config.CORS_ORIGINS` (tableau, parsé depuis une liste séparée par des virgules) dans `backend/src/config/Config.ts` et `index.ts`, pour accepter plusieurs origines simultanément (Mac via `localhost` + iPhone via IP locale)

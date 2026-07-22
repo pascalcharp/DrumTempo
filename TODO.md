@@ -92,10 +92,83 @@ en premier (l'auth a besoin d'une gestion de secrets propre dès le départ), pu
   2026-07-22 : `whoami` → `node` dans les deux conteneurs ; cycle complet validé par test de fumée et par
   `auth.http`/`exercises.http` rejoués dans WebStorm.*
 
-### 5.7 — Dépendances
-- [ ] `npm audit` sur `/frontend` et `/backend`, corriger les vulnérabilités trouvées
-  *Test manuel : `npm audit` ne retourne plus de vulnérabilité high/critical.*
+### 5.7 — Dépendances ✅
+- [x] `npm audit` sur `/frontend` et `/backend`, corriger les vulnérabilités trouvées
+  *Test manuel : `npm audit` ne retourne plus de vulnérabilité high/critical. ✅ Confirmé le 2026-07-22 :
+  `0 vulnerabilities` dans les deux projets, aucun correctif nécessaire.*
 
-### 5.8 — HTTPS (documentation seulement pour l'instant)
-- [ ] Documenter dans `README.md` les étapes nécessaires pour un vrai déploiement (reverse proxy + certificat) —
-  non implémenté dans le `docker-compose.yml` local actuel1    
+### 5.8 — Documentation de l'architecture de déploiement (production, documentation seulement) ✅
+
+Architecture cible retenue (2026-07-22, but pédagogique : pratiques "grade production" à coût minime) :
+
+```
+[ iPhone / navigateur ] → HTTPS (TLS 1.3)
+        ▼
+[ Cloudflare ]  — DNS, WAF, CDN, anti-DDoS (plan gratuit)
+        ├──▶ app.tondomaine.com ──▶ [ Vercel/Netlify ]  (build statique Vue.js, gratuit)
+        └──▶ api.tondomaine.com ──▶ [ VPS Linux ] (Hetzner/DigitalOcean/OVH, ~5$/mois)
+                                          ├─ Caddy (reverse proxy, TLS via certificat
+                                          │  Cloudflare Origin CA — mode "Full strict")
+                                          └─ Conteneur backend (déjà durci : helmet,
+                                             rate-limit, non-root, Mongo authentifié)
+                                                ▼ TLS (mongodb+srv://)
+                                          [ MongoDB Atlas M0 ]  (gratuit, managé, isolé)
+```
+
+Coût estimé : ~5-7$/mois (VPS + nom de domaine amorti ; Cloudflare, Vercel/Netlify, Atlas M0 et
+GitHub Actions gratuits à cette échelle).
+
+- [ ] Documenter l'architecture ci-dessus dans `README.md`, avec le raisonnement du mode "Full strict"
+  (pourquoi Cloudflare seul ne suffit pas pour un HTTPS de bout en bout — Caddy + certificat Origin CA
+  nécessaires sur le VPS)
+- [ ] Documenter les ajustements de config nécessaires le jour du déploiement : `Config.CORS_ORIGINS`
+  (domaine Vercel/Netlify), `VITE_API_URL` (sous-domaine du VPS), `MONGO_URI` (Atlas), retrait du service
+  `db` de `docker-compose.yml` (remplacé par Atlas), gestion des secrets en prod (pas de `.env` de dev)
+- [ ] Documenter la limite du tier gratuit Atlas M0 (pas de sauvegarde automatique) et l'alternative
+  `mongodump` planifié + stockage objet bon marché (ex: Backblaze B2)
+- [ ] Documenter le principe du pipeline CI/CD (GitHub Actions) pour le déploiement automatisé
+  *Test manuel : relecture du README par l'utilisateur — permet de reproduire le déploiement sans
+  redécouvrir ces décisions. Reste au stade documentation ; l'implémentation réelle (future Étape 7) attend
+  la complétion de l'Étape 6 (tests automatisés). ✅ Section "Déploiement en production (architecture
+  cible)" ajoutée au README le 2026-07-22.*
+
+## Étape 6 : Tests automatisés (avant le déploiement en production)
+
+Contexte : chaque changement d'infrastructure depuis le début de l'Étape 5 (rate-limiter, utilisateur
+Docker non-root, `sanitizeFilter`) a dû être revalidé manuellement via `auth.http`/`exercises.http`. Une
+suite automatisée capture cette couverture une fois pour toutes et évite de perdre du temps à chaque
+itération future, en particulier une fois le déploiement (Étape 7) entamé.
+
+Outillage retenu : **Vitest** partout (déjà l'écosystème du frontend via Vite — un seul outil de test à
+apprendre plutôt que Jest+Vitest séparés), `supertest` + `mongodb-memory-server` côté backend (teste l'API
+sans toucher à Mongo dev/Atlas), `@vue/test-utils` côté frontend.
+
+### 6.1 — Outillage & configuration
+- [ ] Ajouter Vitest à `/backend` et `/frontend`
+- [ ] Backend : ajouter `supertest` + `mongodb-memory-server`
+- [ ] Frontend : ajouter `@vue/test-utils`
+  *Test manuel : `npm test` s'exécute (suite vide) sans erreur de configuration, dans les deux projets.*
+
+### 6.2 — Tests unitaires backend : modèles & config
+- [ ] `Exercise` : bornes de tempo (TEMPO_MIN/MAX), nom requis, unicité par `owner`, `current_tempo` null valide
+- [ ] `User` : hachage du mot de passe (hash ≠ mot de passe brut), `comparePassword` (vrai/faux mot de passe)
+  *Test manuel : `npm test` (backend) — tous les cas passent ; un cas volontairement invalide fait échouer
+  le test (preuve que la suite détecte vraiment les régressions).*
+
+### 6.3 — Tests d'intégration backend : routes API
+- [ ] `auth` : register (succès, email dupliqué, mot de passe trop court, email malformé), login (succès,
+  mauvais mot de passe, email inconnu, injection d'opérateur Mongo)
+- [ ] `exercises` : CRUD complet + isolation entre utilisateurs (404 sur les exercices d'autrui) + 401 sans token
+  *Reprend la couverture actuelle de `auth.http`/`exercises.http`, automatisée.*
+  *Test manuel : `npm test` (backend) reproduit tous les cas sans intervention manuelle.*
+
+### 6.4 — Tests composants frontend
+- [ ] `ExerciseList` (rendu, emit `ajuster-tempo`/`supprimer`, désactivation des boutons aux bornes)
+- [ ] `ExerciseForm` (soumission, validation)
+- [ ] `App.vue` (orchestration : chargement au montage, handlers) avec `exerciseService` mocké
+  *Test manuel : `npm test` (frontend) — tous les cas passent.*
+
+### 6.5 — Intégration continue (CI)
+- [ ] Workflow GitHub Actions : `npm test` sur `/backend` et `/frontend` à chaque push/PR
+  *Test manuel : push d'un commit avec un test volontairement cassé → le workflow échoue visiblement sur
+  GitHub ; correctif → workflow vert.*1    
