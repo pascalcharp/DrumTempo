@@ -1,0 +1,97 @@
+### Fichier de tests HTTP reproductibles pour l'API /api/auth
+### À exécuter avec l'outil HTTP intégré de WebStorm (clic sur "Run" au-dessus de chaque requête)
+### Prérequis : backend démarré (docker-compose up, ou npm run dev dans /backend), base réinitialisée
+### (voir README.md, section "Réinitialiser la base") pour repartir sans utilisateur existant.
+
+@baseUrl = http://localhost:3000/api/auth
+
+### 1. Inscription valide de l'utilisateur A (201 attendu)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "userA@example.com",
+  "password": "motDePasseSecurise123"
+}
+
+### 2. Inscription avec le même email (409 attendu)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "userA@example.com",
+  "password": "autreMotDePasse456"
+}
+
+### 3. Inscription avec un mot de passe trop court (400 attendu, < PASSWORD_MIN_LENGTH = 8)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "trop-court@example.com",
+  "password": "1234"
+}
+
+### 4. Inscription avec un email mal formé (400 attendu)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "pas-un-email",
+  "password": "motDePasseSecurise123"
+}
+
+### 5. Inscription valide de l'utilisateur B (201 attendu) — sert aux tests de séparation
+### des exercices entre utilisateurs dans exercises.http
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "userB@example.com",
+  "password": "motDePasseSecurise789"
+}
+
+### 6. Connexion valide de l'utilisateur A (200 attendu, token retourné)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "userA@example.com",
+  "password": "motDePasseSecurise123"
+}
+
+> {%
+    client.global.set("tokenUserA", response.body.token);
+%}
+
+### 7. Connexion valide de l'utilisateur B (200 attendu, token retourné)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "userB@example.com",
+  "password": "motDePasseSecurise789"
+}
+
+> {%
+    client.global.set("tokenUserB", response.body.token);
+%}
+
+### 8. Connexion avec un mauvais mot de passe (401 attendu, message générique)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "userA@example.com",
+  "password": "mauvaisMotDePasse"
+}
+
+### 9. Connexion avec un email inconnu (401 attendu, même message qu'à l'étape 8 —
+### ne doit pas révéler que l'email n'existe pas)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "inconnu@example.com",
+  "password": "peuImporte123"
+}
