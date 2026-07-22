@@ -140,6 +140,61 @@
   authentication` ; avec identifiants (`-u`/`-p`/`--authenticationDatabase admin`) → succès. Backend
   connecté normalement via le `MONGO_URI` authentifié (`Connected to MongoDB` dans les logs)
 
+## 2026-07-22 — Étape 5.4 : Durcissement HTTP
+
+- Dépendances ajoutées : `helmet`, `express-rate-limit`
+- Création de `backend/src/config/HttpConfig.ts` : `JSON_BODY_LIMIT` (10kb), `RATE_LIMIT_WINDOW_MS`
+  (15 min), `RATE_LIMIT_MAX_REQUESTS` (100), message 429
+- `index.ts` : `helmet()` en tout premier middleware ; limite de taille appliquée à `express.json()` ;
+  rate-limiter monté sur le préfixe `/api` (avant `authRoutes`/`exerciseRoutes`, donc actif même sur les
+  requêtes non authentifiées) — `/health` et `/api-docs` non affectés
+- ✅ Tests confirmés : en-têtes de sécurité (`Content-Security-Policy`, `X-Frame-Options`, etc.) présents
+  via `curl -I` ; 100 requêtes sur `/api/exercises` traitées normalement puis 429 à partir de la 101e ;
+  `/health` accessible pendant le blocage ; payload JSON de 20kb → 413
+- Le rate-limiter étant en mémoire (par IP), un test répété depuis la même machine épuise le quota partagé
+  pour ~15 minutes — le conteneur `backend` a été redémarré après les tests pour réinitialiser le compteur
+  avant de rendre la main pour les tests manuels (`auth.http`/`exercises.http`)
+
+## 2026-07-22 — Étape 5.5 : Validation et sanitation des entrées
+
+- **Faille trouvée** : `POST /api/auth/login` avec `{"email":{"$ne":null},"password":{"$ne":null}}`
+  retournait 500 — le filtre `email: {$ne: null}` était transmis tel quel à MongoDB (opérateur réellement
+  interprété, pas juste une erreur de validation), le 500 venait de `bcrypt.compare` plantant sur un mot de
+  passe non-string. Un attaquant fournissant un vrai mot de passe en clair aurait pu matcher un utilisateur
+  arbitraire de la collection via l'opérateur, un vecteur d'injection NoSQL classique
+- **Correctif** : `mongoose.set('sanitizeFilter', true)` activé globalement dans `backend/src/db/database.ts`
+  — Mongoose neutralise désormais toute clé `$`-préfixée dans les filtres de requête (les traite comme une
+  valeur littérale plutôt qu'un opérateur), pour toutes les requêtes de l'application
+- Effet de bord découvert : une fois l'opérateur neutralisé, Mongoose tente de caster l'objet résiduel vers
+  le type `String` du champ `email` et lève un `CastError` — non géré dans `login` (seule route sans
+  `switch(true)` sur `err.name`, contrairement à `register` et aux routes `/api/exercises`). Ajouté par
+  l'utilisateur : cas `CastError` → 400 dans le `catch` de `login`
+- Audit des autres routes : `register` (déjà 400 via `ValidationError`, la casse échoue au niveau du
+  document et pas de la requête), `PATCH`/`DELETE` de `exerciseRoutes.ts` (déjà `CastError` → 400) — `login`
+  était le seul point d'entrée non couvert
+- Vérifié également : tempo non numérique (`ValidationError` déjà géré → 400) et nom d'exercice trop long
+  (`maxlength` du schéma déjà en place → 400) — aucun changement nécessaire, comportement déjà correct
+- Tests effectués directement via `curl` contre le backend en cours d'exécution (utilisateur/exercices de
+  test nettoyés de la base après coup)
+- ✅ Étape 5.5 confirmée : injection `$ne` → 400 propre, login légitime toujours fonctionnel
+
+## 2026-07-22 — Étape 5.6 : Durcissement Docker (utilisateur non-root)
+
+- `backend/Dockerfile` et `frontend/Dockerfile` : bascule vers l'utilisateur `node` (déjà présent dans
+  l'image `node:22-alpine`, uid 1000) au lieu de tourner en root
+- Premier essai raté : `USER node` placé juste avant `CMD` (après `COPY`/`RUN npm install` en root) —
+  laissait `/app` et `node_modules` root-owned, ce qui aurait cassé toute écriture ultérieure sous `/app`
+  (ex: cache de pré-bundling Vite dans `node_modules/.vite`)
+- Deuxième essai raté : bascule vers `node` avant `npm install` avec `COPY --chown=node:node`, mais
+  `WORKDIR /app` crée le répertoire `/app` lui-même appartenant à `root` — `--chown` sur `COPY` ne change
+  que les fichiers copiés, pas le répertoire parent, donc `npm install` échouait à créer `node_modules`
+  (`EACCES`, "The operation was rejected by your operating system")
+- Correctif final : `RUN chown node:node /app` (en root, juste après `WORKDIR`) avant de basculer vers
+  `USER node`, puis `COPY --chown=node:node` et `npm install` en tant que `node`
+- ✅ Rebuild (`docker-compose up --build -V`) réussi ; `docker exec drumtempo-backend/-frontend whoami` →
+  `node` dans les deux conteneurs ; aucune erreur de permission dans les logs ; test de fumée complet
+  (register → login → création d'exercice → liste) confirmé via `curl` après le changement d'utilisateur
+
 ## 2026-07-21 — Accès depuis un iPhone sur le réseau local
 
 - `Config.CORS_ORIGIN` (string unique) remplacé par `Config.CORS_ORIGINS` (tableau, parsé depuis une liste séparée par des virgules) dans `backend/src/config/Config.ts` et `index.ts`, pour accepter plusieurs origines simultanément (Mac via `localhost` + iPhone via IP locale)

@@ -69,21 +69,28 @@ en premier (l'auth a besoin d'une gestion de secrets propre dès le départ), pu
   identifiants → `MongoServerError: Command find requires authentication` ; avec identifiants → succès.
   Backend connecté normalement via `MONGO_URI` authentifié.*
 
-### 5.4 — Durcissement HTTP
-- [ ] Ajouter `helmet` (en-têtes de sécurité standards)
-- [ ] Limiter explicitement la taille des payloads JSON
-- [ ] Ajouter un rate-limiter (`express-rate-limit`) sur les routes API
+### 5.4 — Durcissement HTTP ✅
+- [x] Ajouter `helmet` (en-têtes de sécurité standards)
+- [x] Limiter explicitement la taille des payloads JSON
+- [x] Ajouter un rate-limiter (`express-rate-limit`) sur les routes API
   *Test manuel : `curl -I` montre les en-têtes de sécurité. Après un grand nombre de requêtes rapides, le
-  serveur répond 429.*
+  serveur répond 429. ✅ Confirmé le 2026-07-22 : en-têtes `helmet` présents sur `/health` ; 100 requêtes
+  sur `/api/exercises` traitées normalement puis 429 à partir de la 101e ; `/health` non affecté par le
+  rate-limit (hors préfixe `/api`) ; payload JSON > 10kb → 413.*
 
-### 5.5 — Validation et sanitation des entrées
-- [ ] Vérifier/renforcer le mode strict de Mongoose contre l'injection de champs arbitraires
+### 5.5 — Validation et sanitation des entrées ✅
+- [x] Vérifier/renforcer le mode strict de Mongoose contre l'injection de champs arbitraires
   *Test manuel : envoyer des payloads malveillants (opérateurs Mongo, tempo non numérique, chaînes très
-  longues) via `exercises.http` → rejet propre en 400, jamais de crash serveur.*
+  longues) via `exercises.http` → rejet propre en 400, jamais de crash serveur. ✅ Confirmé le 2026-07-22 :
+  faille réelle trouvée et corrigée (voir DEVLOG) — `{"email":{"$ne":null},"password":"..."}` sur
+  `/api/auth/login` retourne maintenant 400 au lieu de 500/contournement ; tempo non numérique et nom trop
+  long déjà correctement rejetés en 400 (`ValidationError` existant).*
 
-### 5.6 — Durcissement Docker
-- [ ] Utilisateur non-root dans les `Dockerfile` (backend et frontend)
-  *Test manuel : `docker exec drumtempo-backend whoami` retourne un utilisateur non-root.*
+### 5.6 — Durcissement Docker ✅
+- [x] Utilisateur non-root dans les `Dockerfile` (backend et frontend)
+  *Test manuel : `docker exec drumtempo-backend whoami` retourne un utilisateur non-root. ✅ Confirmé le
+  2026-07-22 : `whoami` → `node` dans les deux conteneurs ; cycle complet validé par test de fumée et par
+  `auth.http`/`exercises.http` rejoués dans WebStorm.*
 
 ### 5.7 — Dépendances
 - [ ] `npm audit` sur `/frontend` et `/backend`, corriger les vulnérabilités trouvées
