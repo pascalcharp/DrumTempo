@@ -235,3 +235,42 @@
 - `Config.CORS_ORIGIN` (string unique) remplacé par `Config.CORS_ORIGINS` (tableau, parsé depuis une liste séparée par des virgules) dans `backend/src/config/Config.ts` et `index.ts`, pour accepter plusieurs origines simultanément (Mac via `localhost` + iPhone via IP locale)
 - `docker-compose.yml` : `CORS_ORIGIN` inclut maintenant `http://localhost:5173` et `http://192.168.2.61:5173` ; `VITE_API_URL` pointe vers l'IP locale (`http://192.168.2.61:3000`) plutôt que `localhost`, puisque cette variable est résolue par le navigateur du client, pas par le conteneur
 - Documentation ajoutée dans `README.md` : section "Frontend — Tester sur un iPhone (même réseau Wi-Fi)"
+
+## 2026-07-22 — Étape 6.1 : Outillage & configuration des tests automatisés
+
+- Backend : ajout de `vitest`, `supertest`, `@types/supertest`, `mongodb-memory-server` (devDependencies),
+  script `npm test` (`vitest run`)
+- `backend/vitest.config.ts` : environnement `node`, `setupFiles` vers `src/test/setup.ts`, `hookTimeout`
+  augmenté à 60s (téléchargement du binaire MongoDB au premier lancement)
+- `backend/src/test/setup.ts` : démarre un `MongoMemoryServer` (vrai moteur `mongod`, stockage en RAM,
+  instance complètement séparée de la base de dev/Atlas) avant la suite, connecte Mongoose dessus, vide
+  les collections après chaque test, ferme tout à la fin
+- Test de fumée `backend/src/test/sanity.test.ts` : écrit/relit un document via un modèle Mongoose jetable,
+  pour valider la chaîne complète Vitest → MongoDB en mémoire → Mongoose
+- Frontend : ajout de `vitest`, `@vue/test-utils`, `jsdom` (devDependencies), script `npm test`
+  (`vitest run`), bloc `test` (`environment: 'jsdom'`) ajouté à `vite.config.js`
+- Test de fumée `frontend/src/test/sanity.test.js` : monte un composant Vue trivial via
+  `@vue/test-utils` et vérifie le rendu
+- ✅ Étape 6.1 confirmée le 2026-07-22 : `npm test` réussi dans `/backend` et `/frontend`
+
+## 2026-07-22 — Étape 6.2 : Tests unitaires backend (modèles `Exercise` et `User`)
+
+- `backend/vitest.config.ts` : ajout de `test.env.JWT_SECRET` (valeur de test fixe) — `AuthConfig` exige
+  `JWT_SECRET` dès le chargement du module (initialiseur statique) et les tests ne passent pas par
+  `env.ts`/`dotenv`, donc ne doivent pas dépendre d'un `.env` local (important pour la CI de l'Étape 6.5)
+- `backend/src/models/Exercise.test.ts` : 6 cas — `current_tempo` null valide, rejet sous `TEMPO_MIN`,
+  rejet au-dessus de `TEMPO_MAX`, acceptation des bornes exactes, `name` requis, unicité de `name` scopée
+  par `owner` (duplicata total rejeté avec code Mongo `11000`, duplicata partiel — même nom, owner
+  différent — accepté)
+- `backend/src/models/User.test.ts` : 5 cas — mot de passe haché (≠ valeur brute), `comparePassword` vrai/
+  faux mot de passe, `email` requis, rejet d'un format d'email invalide
+- Bugs trouvés en revue et corrigés par l'utilisateur pendant l'implémentation :
+  - Premier test `User` : `expect(...)` appelé sans matcher (`.not.toBe(...)` manquant) — l'assertion ne
+    vérifiait rien
+  - Test `comparePassword` : appelé sur `savedUser.toObject()` (qui dépouille les méthodes du document
+    Mongoose) plutôt que sur le document lui-même, et sans `await` sur une méthode asynchrone
+  - Test d'unicité `Exercise` : `it.fails("message")` utilisé à l'intérieur d'un test pour tenter de le
+    faire échouer manuellement — n'est pas une assertion valide (ce modificateur ne s'utilise qu'à la
+    déclaration d'un test) ; remplacé par `await expect(totalDuplicate.save()).rejects.toMatchObject({
+    code: 11000 })`
+- ✅ Étape 6.2 confirmée le 2026-07-22 : `npm test` (backend) — 11 tests, tous verts

@@ -143,17 +143,20 @@ Outillage retenu : **Vitest** partout (déjà l'écosystème du frontend via Vit
 apprendre plutôt que Jest+Vitest séparés), `supertest` + `mongodb-memory-server` côté backend (teste l'API
 sans toucher à Mongo dev/Atlas), `@vue/test-utils` côté frontend.
 
-### 6.1 — Outillage & configuration
-- [ ] Ajouter Vitest à `/backend` et `/frontend`
-- [ ] Backend : ajouter `supertest` + `mongodb-memory-server`
-- [ ] Frontend : ajouter `@vue/test-utils`
-  *Test manuel : `npm test` s'exécute (suite vide) sans erreur de configuration, dans les deux projets.*
+### 6.1 — Outillage & configuration ✅
+- [x] Ajouter Vitest à `/backend` et `/frontend`
+- [x] Backend : ajouter `supertest` + `mongodb-memory-server`
+- [x] Frontend : ajouter `@vue/test-utils`
+  *Test manuel : `npm test` s'exécute (suite vide) sans erreur de configuration, dans les deux projets.
+  ✅ Confirmé le 2026-07-22 : test de fumée backend (écriture/lecture Mongoose sur MongoDB en mémoire) et
+  test de fumée frontend (montage d'un composant via `@vue/test-utils`) tous deux réussis.*
 
-### 6.2 — Tests unitaires backend : modèles & config
-- [ ] `Exercise` : bornes de tempo (TEMPO_MIN/MAX), nom requis, unicité par `owner`, `current_tempo` null valide
-- [ ] `User` : hachage du mot de passe (hash ≠ mot de passe brut), `comparePassword` (vrai/faux mot de passe)
+### 6.2 — Tests unitaires backend : modèles & config ✅
+- [x] `Exercise` : bornes de tempo (TEMPO_MIN/MAX), nom requis, unicité par `owner`, `current_tempo` null valide
+- [x] `User` : hachage du mot de passe (hash ≠ mot de passe brut), `comparePassword` (vrai/faux mot de passe)
   *Test manuel : `npm test` (backend) — tous les cas passent ; un cas volontairement invalide fait échouer
-  le test (preuve que la suite détecte vraiment les régressions).*
+  le test (preuve que la suite détecte vraiment les régressions).
+  ✅ Confirmé le 2026-07-22 : `Exercise.test.ts` (6 cas) et `User.test.ts` (5 cas) tous verts.*
 
 ### 6.3 — Tests d'intégration backend : routes API
 - [ ] `auth` : register (succès, email dupliqué, mot de passe trop court, email malformé), login (succès,
