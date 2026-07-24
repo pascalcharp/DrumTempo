@@ -14,21 +14,35 @@ describe('ExerciseList', () => {
 
       const wrapper = mount(ExerciseList, {
         props: { exercises: exercicesExemple }
-      });
+      }) ;
 
-      const texteVisible = wrapper.text();
+      const items = wrapper.findAll('li.exercice') ;
+      expect(items).toHaveLength(2) ;
 
-      expect(texteVisible).toContain('Paradiddle');
-      expect(texteVisible).toContain('120');
-      expect(texteVisible).toContain('Flam');
-      expect(texteVisible).toContain('-');
+      expect(items[0].find('.nom').text()).toBe('Paradiddle') ;
+      expect(items[0].find('.tempo').text()).toBe('120') ;
+      expect(items[1].find('.nom').text()).toBe('Flam') ;
+      expect(items[1].find('.tempo').text()).toBe('-') ;
+
   });
 
 
   it("émet 'ajuster-tempo' avec (id, tempo actuel, +TEMPO_STEP) au clic sur le bouton +", async () => {
-    // TODO : monter avec un seul exercice à current_tempo: 120
-    // Indice : wrapper.findAll('button')[1].trigger('click') pour cibler le bouton "+"
-    // Vérifier wrapper.emitted('ajuster-tempo')[0] === ['1', 120, TempoConfig.TEMPO_STEP]
+
+      const wrapper = mount(ExerciseList, {
+                  props: { exercises: [{ name: 'Paradiddle', current_tempo: 120 }] }
+      }) ;
+
+      const boutonPlus = wrapper.find('[data-test="btn-incr"]') ;
+      expect(boutonPlus.exists()).toBe(true) ;
+      await boutonPlus.trigger('click') ;
+
+      expect(wrapper.emitted('ajuster-tempo')).toEqual([
+          ['1', 120, TempoConfig.TEMPO_STEP]
+      ]);
+
+
+
   });
 
   it("émet 'ajuster-tempo' avec un delta négatif au clic sur le bouton -", async () => {

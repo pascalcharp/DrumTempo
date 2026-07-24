@@ -27,10 +27,10 @@ function supprimerExercice(selectedExerciseId) {
 
       <span class="tempo">{{ exercice.current_tempo ?? "-" }}</span>
 
-      <button type="button" @click = "ajusterTempo(exercice._id,  exercice.current_tempo, -TempoConfig.TEMPO_STEP)" :disabled="exercice.current_tempo == null || exercice.current_tempo <= TempoConfig.TEMPO_MIN">-{{ TempoConfig.TEMPO_STEP }}</button>
-      <button type="button" @click="ajusterTempo(exercice._id, exercice.current_tempo, TempoConfig.TEMPO_STEP)" :disabled="exercice.current_tempo != null && exercice.current_tempo >= TempoConfig.TEMPO_MAX">+{{ TempoConfig.TEMPO_STEP }}</button>
+      <button data-test="btn-decr" type="button" @click = "ajusterTempo(exercice._id,  exercice.current_tempo, -TempoConfig.TEMPO_STEP)" :disabled="exercice.current_tempo == null || exercice.current_tempo <= TempoConfig.TEMPO_MIN">-{{ TempoConfig.TEMPO_STEP }}</button>
+      <button data-test="btn-incr" type="button" @click="ajusterTempo(exercice._id, exercice.current_tempo, TempoConfig.TEMPO_STEP)" :disabled="exercice.current_tempo != null && exercice.current_tempo >= TempoConfig.TEMPO_MAX">+{{ TempoConfig.TEMPO_STEP }}</button>
 
-      <button type="button" class="supprimer" @click="supprimerExercice(exercice._id)">Supprimer</button>
+      <button data-test="btn-suppr" type="button" class="supprimer" @click="supprimerExercice(exercice._id)">Supprimer</button>
     </li>
   </ul>
 </template>
