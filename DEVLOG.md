@@ -274,3 +274,60 @@
     déclaration d'un test) ; remplacé par `await expect(totalDuplicate.save()).rejects.toMatchObject({
     code: 11000 })`
 - ✅ Étape 6.2 confirmée le 2026-07-22 : `npm test` (backend) — 11 tests, tous verts
+
+## 2026-07-23 — Étape 6.3 (en cours) : refactor `app.ts`/`index.ts` + tests d'intégration `auth`
+
+- `backend/src/app.ts` créé : extrait de `index.ts` toute la construction de l'app Express (middlewares,
+  routes, Swagger) sans `connectDatabase()` ni `app.listen()`, pour la rendre importable par `supertest`
+  sans se connecter à la vraie base ni ouvrir un port. `index.ts` réduit à l'assemblage
+  (`connectDatabase().then(() => app.listen(...))`)
+- `backend/src/test/authHelper.ts` : `createAuthenticatedUser(email)` crée un utilisateur directement en
+  base et signe un token JWT valide, pour les futurs tests de routes `exercises` (évite de retester le
+  flot d'inscription/connexion à chaque cas)
+- `backend/src/routes/authRoutes.test.ts` : 8 cas (register x4, login x4, dont l'injection d'opérateur
+  Mongo `$ne`)
+- **Régression de sécurité trouvée et corrigée pendant l'écriture des tests** : `mongoose.set
+  ('sanitizeFilter', true)` (protection anti-injection de l'Étape 5.5) était déclaré dans
+  `db/database.ts`, en effet de bord au chargement du module — actif seulement quand ce fichier est
+  importé. En production `index.ts` l'importe toujours (via `connectDatabase`), mais le nouveau `app.ts`
+  ne l'importe pas, et `test/setup.ts` (Étape 6.1) se connecte directement à `MongoMemoryServer` sans
+  passer par `connectDatabase()` — la sanitation n'était donc **jamais active pendant les tests**. Le test
+  d'injection Mongo l'a révélé : `POST /api/auth/login` avec `{"email":{"$ne":null},"password":"..."}`
+  retournait 200 (connexion réussie comme n'importe quel utilisateur existant en base), pas 400.
+  Corrigé en déplaçant `mongoose.set('sanitizeFilter', true)` de `db/database.ts` vers `app.ts` — c'est une
+  configuration globale de Mongoose, pas une étape de connexion, donc elle doit s'appliquer dès le
+  chargement de l'app peu importe comment la connexion Mongo est établie ensuite
+- Bugs trouvés en revue et corrigés par l'utilisateur pendant l'implémentation (avant la régression
+  ci-dessus) : mot de passe de test trop court pour un cas de succès (6 caractères vs
+  `PASSWORD_MIN_LENGTH` = 8) ; `toBeNull()` utilisé alors que la route retire complètement `passwordHash`
+  de la réponse (`undefined`, pas `null`) ; premier essai du test d'injection envoyait la chaîne littérale
+  `"{$ne: null}"` au lieu d'un véritable objet `{ "$ne": null }` (ne testait donc rien de pertinent)
+- `npm test` (backend) : 34 tests, tous verts après le correctif
+
+## 2026-07-23 — Étape 6.3 (suite et fin) : tests `exercises`, nettoyage de l'API, messages de validation
+
+- `backend/src/routes/exerciseRoutes.test.ts` : 12 cas (auth requise x2, CRUD complet, isolation entre
+  utilisateurs x3)
+- Discussion de conception initiée par l'utilisateur, deux améliorations apportées à l'API pendant
+  l'écriture des tests (pas des bugs, des décisions de nettoyage) :
+  - `exerciseRoutes.ts` (POST + PATCH) : les erreurs `ValidationError` renvoient maintenant le message
+    précis de Mongoose (`Object.values(err.errors).map(...)`, factorisé dans `extractValidationMessage`)
+    au lieu du message générique `MSG_MONGOOSE_VALIDATION_ERROR`. Jugé acceptable ici car les bornes de
+    validation (tempo, longueur du nom) sont déjà publiques dans la doc Swagger — le message précis
+    n'expose rien de nouveau et améliore l'UX (`ExerciseConfig.MSG_MONGOOSE_VALIDATION_ERROR` n'est plus
+    utilisé côté exercises, conservé côté auth)
+  - `Exercise.ts` : `owner` marqué `select: false` (même pattern que `passwordHash` sur `User`) — exclu par
+    défaut de `find`/`findOne`/`findOneAndUpdate`, donc invisible dans `GET`/`PATCH`. Schéma configuré en
+    `versionKey: false` — `__v` n'est plus créé du tout. Exception : le document retourné par
+    `nouvelExercice.save()` (POST) n'est pas issu d'une requête, donc `select: false` ne s'y applique
+    pas — `owner` est retiré manuellement par déstructuration dans `exerciseRoutes.ts`, même raison que le
+    retrait de `passwordHash` dans `authRoutes.ts` au register
+  - `ExerciseConfig.ts` : constante `MSG_TEMPO_OUT_OF_RANGE` ajoutée (message de validation du tempo,
+    auparavant codé en dur dans `Exercise.ts`), sur le même modèle que `UserConfig.MSG_PASSWORD_TOO_SHORT`
+- Bugs trouvés en revue et corrigés par l'utilisateur pendant l'implémentation : test "token invalide"
+  utilisait `.send({'Authorization': ...})` au lieu de `.set('Authorization', ...)` — l'en-tête n'était
+  jamais réellement envoyé, le test passait via la branche "pas de token" plutôt que "token invalide" ;
+  test "DELETE sur un id inexistant" utilisait `.patch(...)` au lieu de `.delete(...)` (copier-coller non
+  corrigé du test précédent) — passait sans jamais exercer la route DELETE
+- ✅ **Étape 6.3 entièrement complétée et confirmée le 2026-07-23** : `npm test` (backend) — 34 tests, tous
+  verts (5 fichiers : sanity, `Exercise`, `User`, `authRoutes`, `exerciseRoutes`)

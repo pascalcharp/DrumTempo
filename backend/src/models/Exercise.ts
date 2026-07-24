@@ -48,16 +48,17 @@ const ExerciseSchema = new Schema<IExercise>(
       validate: {
         validator: (v: number | null) =>
           v === null || (v >= ExerciseConfig.TEMPO_MIN && v <= ExerciseConfig.TEMPO_MAX),
-        message: `Le tempo doit être entre ${ExerciseConfig.TEMPO_MIN} et ${ExerciseConfig.TEMPO_MAX} BPM`,
+        message: ExerciseConfig.MSG_TEMPO_OUT_OF_RANGE,
       },
     },
     owner: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+      select: false, // usage interne (filtrage/scoping) uniquement — jamais renvoyé au frontend
     },
   },
-  { timestamps: { updatedAt: 'updated_at', createdAt: false } }
+  { timestamps: { updatedAt: 'updated_at', createdAt: false }, versionKey: false }
 );
 
 // Le nom est unique par utilisateur, pas globalement : deux utilisateurs peuvent

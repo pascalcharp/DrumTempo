@@ -158,12 +158,15 @@ sans toucher à Mongo dev/Atlas), `@vue/test-utils` côté frontend.
   le test (preuve que la suite détecte vraiment les régressions).
   ✅ Confirmé le 2026-07-22 : `Exercise.test.ts` (6 cas) et `User.test.ts` (5 cas) tous verts.*
 
-### 6.3 — Tests d'intégration backend : routes API
-- [ ] `auth` : register (succès, email dupliqué, mot de passe trop court, email malformé), login (succès,
+### 6.3 — Tests d'intégration backend : routes API ✅
+- [x] `auth` : register (succès, email dupliqué, mot de passe trop court, email malformé), login (succès,
   mauvais mot de passe, email inconnu, injection d'opérateur Mongo)
-- [ ] `exercises` : CRUD complet + isolation entre utilisateurs (404 sur les exercices d'autrui) + 401 sans token
+  *✅ Confirmé le 2026-07-23 — voir DEVLOG pour la régression de sécurité trouvée et corrigée au passage.*
+- [x] `exercises` : CRUD complet + isolation entre utilisateurs (404 sur les exercices d'autrui) + 401 sans token
   *Reprend la couverture actuelle de `auth.http`/`exercises.http`, automatisée.*
-  *Test manuel : `npm test` (backend) reproduit tous les cas sans intervention manuelle.*
+  *Test manuel : `npm test` (backend) reproduit tous les cas sans intervention manuelle.
+  ✅ Confirmé le 2026-07-23 : 34 tests, tous verts (voir DEVLOG pour le détail : refactor `app.ts`,
+  nettoyage de la sortie API `owner`/`__v`, messages de validation spécifiques).*
 
 ### 6.4 — Tests composants frontend
 - [ ] `ExerciseList` (rendu, emit `ajuster-tempo`/`supprimer`, désactivation des boutons aux bornes)
@@ -174,4 +177,19 @@ sans toucher à Mongo dev/Atlas), `@vue/test-utils` côté frontend.
 ### 6.5 — Intégration continue (CI)
 - [ ] Workflow GitHub Actions : `npm test` sur `/backend` et `/frontend` à chaque push/PR
   *Test manuel : push d'un commit avec un test volontairement cassé → le workflow échoue visiblement sur
-  GitHub ; correctif → workflow vert.*1    
+  GitHub ; correctif → workflow vert.*
+
+## Étape 7 : Frontend — intégration de l'authentification (à détailler)
+
+Constat (2026-07-23, découvert en préparant l'Étape 6.4) : le frontend (Étape 4) a été construit avant
+l'authentification backend (Étape 5.1/5.2) et n'a jamais été mis à jour. `exerciseService.js` n'envoie
+aucun en-tête `Authorization`, et `App.vue` n'a ni formulaire de connexion/inscription ni stockage de
+token — en l'état, l'application réelle recevrait un 401 sur chaque appel à `/api/exercises`. Non
+bloquant pour les tests (6.4 mocke `exerciseService`), mais à traiter avant tout déploiement réel.
+
+- [ ] Écran/formulaire de connexion et d'inscription (`POST /api/auth/login`, `/register`)
+- [ ] Stockage du token JWT côté client (à décider : `localStorage`, `sessionStorage`, ou en mémoire avec
+  re-connexion à chaque ouverture) et ajout de l'en-tête `Authorization: Bearer <token>` dans
+  `exerciseService.js`
+- [ ] Gestion de l'expiration du token (401 → redirection vers l'écran de connexion)
+- [ ] Bouton de déconnexion1    

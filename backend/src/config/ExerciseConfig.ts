@@ -3,6 +3,7 @@ export class ExerciseConfig {
   static readonly TEMPO_MAX: number = 300;
   static readonly NAME_MAX_LENGTH: number = 100;
 
+  static readonly MSG_TEMPO_OUT_OF_RANGE: string = `Le tempo doit être entre ${ExerciseConfig.TEMPO_MIN} et ${ExerciseConfig.TEMPO_MAX} BPM`;
   static readonly MSG_SERVER_ERROR: string = 'Erreur serveur';
   static readonly MSG_NOT_FOUND_UPDATE: string = 'Exercice à actualiser inexistant';
   static readonly MSG_NOT_FOUND_DELETE: string = 'Exercice à supprimer inexistant';

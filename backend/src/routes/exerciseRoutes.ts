@@ -4,6 +4,15 @@ import { ExerciseConfig } from '../config/ExerciseConfig';
 
 const router = Router();
 
+// Les bornes de validation (tempo, longueur du nom) sont déjà publiques dans la doc Swagger — renvoyer
+// le message précis de Mongoose plutôt qu'un message générique aide l'utilisateur à corriger son erreur
+// sans exposer d'information qui ne l'était pas déjà.
+function extractValidationMessage(err: any): string {
+  return Object.values(err.errors)
+    .map((validatorError: any) => validatorError.message)
+    .join(', ');
+}
+
 /**
  * @openapi
  * /api/exercises:
@@ -80,13 +89,17 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
     const nouvelExercice = new Exercise({...req.body, owner: req.userId}) ;
     const exerciceSauvegarde = await nouvelExercice.save() ;
-    res.status(201).json(exerciceSauvegarde) ;
+    // select: false sur `owner` ne s'applique qu'aux requêtes (find/findOneAndUpdate) : un document
+    // fraîchement sauvegardé en mémoire l'inclut toujours, il faut donc le retirer explicitement ici
+    // (même raison que le retrait manuel de passwordHash dans authRoutes.ts après le register).
+    const { owner, ...exerciceNettoye } = exerciceSauvegarde.toObject() ;
+    res.status(201).json(exerciceNettoye) ;
 
   } catch (err: any) {
     console.error(err);
     switch (true) {
       case err.name === 'ValidationError':
-        res.status(400).json({message: ExerciseConfig.MSG_MONGOOSE_VALIDATION_ERROR});
+        res.status(400).json({message: extractValidationMessage(err)});
         break;
 
       case err.code === 11000:
@@ -155,7 +168,7 @@ router.patch('/:id', async (req: Request, res: Response): Promise<void> => {
     console.error(err);
     switch (true) {
       case err.name === 'ValidationError':
-        res.status(400).json({ message: ExerciseConfig.MSG_MONGOOSE_VALIDATION_ERROR });
+        res.status(400).json({ message: extractValidationMessage(err) });
         break;
 
       case err.name === 'CastError':
