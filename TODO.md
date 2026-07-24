@@ -169,7 +169,9 @@ sans toucher à Mongo dev/Atlas), `@vue/test-utils` côté frontend.
   nettoyage de la sortie API `owner`/`__v`, messages de validation spécifiques).*
 
 ### 6.4 — Tests composants frontend
-- [ ] `ExerciseList` (rendu, emit `ajuster-tempo`/`supprimer`, désactivation des boutons aux bornes)
+- [x] `ExerciseList` (rendu, emit `ajuster-tempo`/`supprimer`, désactivation des boutons aux bornes)
+  ✅ Confirmé le 2026-07-24 : 10 tests, tous verts (rendu, emit +/- et suppression, désactivation aux
+  bornes TEMPO_MIN/TEMPO_MAX/null, réactivation dynamique via `setProps`).
 - [ ] `ExerciseForm` (soumission, validation)
 - [ ] `App.vue` (orchestration : chargement au montage, handlers) avec `exerciseService` mocké
   *Test manuel : `npm test` (frontend) — tous les cas passent.*
