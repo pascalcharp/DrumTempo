@@ -185,10 +185,13 @@ sans toucher à Mongo dev/Atlas), `@vue/test-utils` côté frontend.
 **Étape 6.4 ✅ entièrement complétée et confirmée (2026-07-24) : `ExerciseList` (10), `ExerciseForm` (4),
 `App.vue` (5) — 19 tests, tous verts.**
 
-### 6.5 — Intégration continue (CI)
-- [ ] Workflow GitHub Actions : `npm test` sur `/backend` et `/frontend` à chaque push/PR
-  *Test manuel : push d'un commit avec un test volontairement cassé → le workflow échoue visiblement sur
-  GitHub ; correctif → workflow vert.*
+### 6.5 — Intégration continue (CI) ✅
+- [x] Workflow GitHub Actions : `npm test` sur `/backend` et `/frontend` à chaque push/PR
+  ✅ Confirmé le 2026-07-24 : `.github/workflows/tests.yml` (jobs `backend-tests`/`frontend-tests`) vert au
+  premier push ; test volontairement cassé dans `ExerciseList.test.js` → workflow rouge confirmé sur
+  GitHub ; correctif → workflow vert de nouveau. Plan de test entièrement validé.
+
+**Étape 6 (Tests automatisés + CI) entièrement complétée.**
 
 ## Étape 7 : Frontend — intégration de l'authentification (à détailler)
 

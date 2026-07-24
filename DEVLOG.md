@@ -369,3 +369,7 @@
   `mongodb-memory-server` télécharge son propre binaire `mongod` — aucun service MongoDB ni secret à
   provisionner dans le workflow
 - ✅ Confirmé le 2026-07-24 : premier push déclenche le workflow, les deux jobs passent au vert sur GitHub
+- Vérification du chemin d'échec (plan de test de `TODO.md`) : assertion volontairement cassée dans
+  `ExerciseList.test.js` (`toHaveLength(2)` → `toHaveLength(3)`), commit+push → workflow rouge confirmé sur
+  GitHub ; assertion restaurée, commit+push → workflow vert de nouveau
+- ✅ **Étape 6 (Tests automatisés + CI) entièrement complétée**
