@@ -67,7 +67,7 @@ async function handleSupprimer (id) {
   <main>
     <h1>DrumTempo</h1>
 
-    <p v-if="erreur" class="erreur">{{ erreur }}</p>
+    <p v-if="erreur" data-test="msg-erreur" class="erreur">{{ erreur }}</p>
 
     <ExerciseForm  @ajouter="handleAjouter" />
 

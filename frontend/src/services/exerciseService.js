@@ -5,7 +5,7 @@ async function traiterReponse(reponse) {
 
   const corps = await reponse.json();
   if (!reponse.ok) {
-    throw new Error(corps.message ?? `Erreur HTTP ${reponse.status}`);
+    throw new Error(corps.message ?? ApiConfig.messageErreurHttpParDefaut(reponse.status));
   }
   return corps;
 }

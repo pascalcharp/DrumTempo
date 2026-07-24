@@ -173,10 +173,17 @@ sans toucher à Mongo dev/Atlas), `@vue/test-utils` côté frontend.
   ✅ Confirmé le 2026-07-24 : 10 tests, tous verts (rendu, emit +/- et suppression, désactivation aux
   bornes TEMPO_MIN/TEMPO_MAX/null, réactivation dynamique via `setProps`).
 - [x] `ExerciseForm` (soumission, validation)
-  ✅ Confirmé le 2026-07-24 : 3 tests, tous verts (émission `ajouter` avec nom+tempo, `current_tempo: null`
-  quand le tempo n'est pas renseigné, réinitialisation des deux champs après soumission).
-- [ ] `App.vue` (orchestration : chargement au montage, handlers) avec `exerciseService` mocké
+  ✅ Confirmé le 2026-07-24 : 4 tests, tous verts (émission `ajouter` avec nom+tempo, `current_tempo: null`
+  quand le tempo n'est pas renseigné, `current_tempo: null` quand le champ est effacé (`""`),
+  réinitialisation des deux champs après soumission).
+- [x] `App.vue` (orchestration : chargement au montage, handlers) avec `exerciseService` mocké
+  ✅ Confirmé le 2026-07-24 : 5 tests, tous verts (chargement au montage, message d'erreur si le
+  chargement échoue, ajout d'exercice via `ExerciseForm`, passage de `null` à `TEMPO_MIN` sans addition de
+  delta, suppression via `ExerciseList`).
   *Test manuel : `npm test` (frontend) — tous les cas passent.*
+
+**Étape 6.4 ✅ entièrement complétée et confirmée (2026-07-24) : `ExerciseList` (10), `ExerciseForm` (4),
+`App.vue` (5) — 19 tests, tous verts.**
 
 ### 6.5 — Intégration continue (CI)
 - [ ] Workflow GitHub Actions : `npm test` sur `/backend` et `/frontend` à chaque push/PR
