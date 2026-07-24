@@ -172,7 +172,9 @@ sans toucher à Mongo dev/Atlas), `@vue/test-utils` côté frontend.
 - [x] `ExerciseList` (rendu, emit `ajuster-tempo`/`supprimer`, désactivation des boutons aux bornes)
   ✅ Confirmé le 2026-07-24 : 10 tests, tous verts (rendu, emit +/- et suppression, désactivation aux
   bornes TEMPO_MIN/TEMPO_MAX/null, réactivation dynamique via `setProps`).
-- [ ] `ExerciseForm` (soumission, validation)
+- [x] `ExerciseForm` (soumission, validation)
+  ✅ Confirmé le 2026-07-24 : 3 tests, tous verts (émission `ajouter` avec nom+tempo, `current_tempo: null`
+  quand le tempo n'est pas renseigné, réinitialisation des deux champs après soumission).
 - [ ] `App.vue` (orchestration : chargement au montage, handlers) avec `exerciseService` mocké
   *Test manuel : `npm test` (frontend) — tous les cas passent.*
 

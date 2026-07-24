@@ -14,13 +14,13 @@ function creerNouvelExercice() {
 </script>
 
 <template>
-  <form class="formulaire-ajout" @submit.prevent="creerNouvelExercice">
+  <form data-test="form-nouvelExercice" class="formulaire-ajout" @submit.prevent="creerNouvelExercice">
 
-    <input type="text" v-model="nom" placeholder="Nom de l'exercice" required />
+    <input data-test="input-nom" type="text" v-model="nom" placeholder="Nom de l'exercice" required />
 
-    <input type="number" v-model.number="tempo" placeholder="Tempo initial (optionnel)" />
+    <input data-test="input-tempo" type="number" v-model.number="tempo" placeholder="Tempo initial (optionnel)" />
 
-    <button type="submit" >Ajouter</button>
+    <button data-test="btn-submit" type="submit" >Ajouter</button>
 
   </form>
 </template>
