@@ -17,7 +17,7 @@ describe('ExerciseList', () => {
         });
 
         const items = wrapper.findAll('li.exercice');
-        expect(items).toHaveLength(2);
+        expect(items).toHaveLength(3); // TEMPORAIRE : casse volontairement le test pour valider la CI (Étape 6.5)
 
         expect(items[0].find('.nom').text()).toBe('Paradiddle');
         expect(items[0].find('.tempo').text()).toBe('120');

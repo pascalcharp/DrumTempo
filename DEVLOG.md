@@ -331,3 +331,41 @@
   corrigé du test précédent) — passait sans jamais exercer la route DELETE
 - ✅ **Étape 6.3 entièrement complétée et confirmée le 2026-07-23** : `npm test` (backend) — 34 tests, tous
   verts (5 fichiers : sanity, `Exercise`, `User`, `authRoutes`, `exerciseRoutes`)
+
+## 2026-07-24 — Étape 6.4 : Tests composants frontend
+
+- `frontend/src/components/ExerciseList.test.js` : 10 cas — rendu nom/tempo (dont `null` → `"-"`), emit
+  `ajuster-tempo` sur les boutons `+`/`-`, emit `supprimer`, désactivation des boutons aux bornes
+  (`TEMPO_MIN`, `TEMPO_MAX`, `null`), réactivation dynamique après `setProps` — implémentés par
+  l'utilisateur, un test à la fois, squelette déjà en place depuis l'Étape 4
+- Bug trouvé en revue sur le premier test rempli : `_id` manquant dans les props de l'exercice de test, donc
+  `exercice._id` valait `undefined` côté composant — corrigé par l'utilisateur
+- `frontend/src/components/ExerciseForm.test.js` : 4 cas — emit `ajouter` avec nom+tempo, `current_tempo:
+  null` quand le champ n'est jamais rempli, `current_tempo: null` quand le champ est rempli puis effacé
+  (`""`, cas ajouté après coup pour couvrir explicitement la branche `tempo.value === ""` de
+  `creerNouvelExercice`), réinitialisation des deux champs après soumission
+- `frontend/src/App.test.js` : 5 cas — chargement et affichage au montage, message d'erreur si le
+  chargement échoue, ajout d'exercice via `ExerciseForm`, passage de `current_tempo: null` directement à
+  `TEMPO_MIN` (pas d'addition du delta à `null`, décision UX de l'Étape 4), suppression via `ExerciseList`
+- Discussion de conception sur le test d'erreur réseau : le fallback de message HTTP
+  (``Erreur HTTP ${status}``) dans `exerciseService.js` était codé en dur, en violation de la règle
+  "aucune constante codée en dur" du `CLAUDE.md` — déplacé vers `ApiConfig.messageErreurHttpParDefaut(status)`.
+  Clarifié avec l'utilisateur que, ces tests mockant entièrement `exerciseService`/`fetch`, chaque scénario
+  d'erreur est entièrement contrôlé par le test — les assertions peuvent donc rester précises (comparaison
+  exacte du message) plutôt qu'affaiblies à une simple vérification de non-vacuité
+  - Constante ajoutée dans `ApiConfig.js`, `exerciseService.js` mis à jour pour l'utiliser
+- Imports inutilisés relevés en revue (sans impact fonctionnel, non corrigés) : `ExerciseList` dans
+  `ExerciseForm.test.js`, `creerExercice` dans `App.test.js`
+- ✅ **Étape 6.4 entièrement complétée et confirmée le 2026-07-24** : `npm test` (frontend) — 19 tests, tous
+  verts (`ExerciseList` 10, `ExerciseForm` 4, `App.vue` 5)
+
+## 2026-07-24 — Étape 6.5 : Intégration continue (CI)
+
+- `.github/workflows/tests.yml` créé : deux jobs parallèles (`backend-tests`, `frontend-tests`) sur
+  `push`/`pull_request` — `actions/checkout@v4`, `actions/setup-node@v4` (Node 22, cache npm via
+  `cache-dependency-path` vers chaque `package-lock.json`), `npm ci`, `npm test` dans le répertoire respectif
+- Aucune configuration supplémentaire requise : `backend/vitest.config.ts` fournit déjà `JWT_SECRET` en dur
+  pour les tests (anticipé dès l'Étape 6.2 pour ne pas dépendre d'un `.env` local en CI), et
+  `mongodb-memory-server` télécharge son propre binaire `mongod` — aucun service MongoDB ni secret à
+  provisionner dans le workflow
+- ✅ Confirmé le 2026-07-24 : premier push déclenche le workflow, les deux jobs passent au vert sur GitHub
