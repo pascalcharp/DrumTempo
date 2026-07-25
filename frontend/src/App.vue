@@ -1,15 +1,22 @@
 <script setup>
-import {ref, onMounted} from 'vue'
+import {ref, computed, onMounted} from 'vue'
 import ExerciseList from './components/ExerciseList.vue'
 import ExerciseForm from './components/ExerciseForm.vue'
+import LoginForm from './components/LoginForm.vue'
 import {creerExercice, listerExercices, mettreAJourTempo, supprimerExercice,} from './services/exerciseService'
+import {login, register} from './services/authService'
+import {obtenirToken, stockerToken, effacerToken} from './services/tokenStorage'
 import {TempoConfig} from "@/config/TempoConfig.js";
 
 const exercices = ref([])
 const erreur = ref(null)
 
+const token = ref(obtenirToken())
+const estConnecte = computed(() => token.value !== null)
+const erreurAuth = ref(null)
 
-onMounted( async () => {
+// Appelée après une connexion réussie ET au montage si un token est déjà stocké (session persistée).
+async function chargerExercices() {
   try {
     exercices.value = await listerExercices() ;
   }
@@ -17,8 +24,41 @@ onMounted( async () => {
     console.log(error) ;
     erreur.value = error.message ;
   }
+}
 
-}) ;
+// TODO : centralise la réaction à une erreur d'appel API. Utilisée dans tous les catch ci-dessous.
+// Si error.status === 401 (token expiré/invalide) : effacer le token (effacerToken()), remettre
+// token.value à null pour revenir à l'écran de connexion, réinitialiser exercices.value.
+// Sinon : comportement actuel, erreur.value = error.message.
+function gererErreurApi(error) {
+  console.log(error) ;
+  erreur.value = error.message ;
+}
+
+onMounted(async () => {
+  if (estConnecte.value) await chargerExercices() ;
+})
+
+// TODO : appelle authService.login(identifiants), et au succès :
+// stockerToken(reponse.token), token.value = reponse.token, erreurAuth.value = null, chargerExercices().
+// À l'échec (catch) : erreurAuth.value = error.message (ne PAS utiliser gererErreurApi ici, l'écran de
+// connexion n'est pas encore "dans l'app").
+async function handleConnexion({email, password}) {
+
+}
+
+// TODO : appelle authService.register(identifiants). Décision à prendre : connexion automatique après
+// inscription (réutiliser handleConnexion), ou affichage d'un message invitant à se connecter manuellement.
+// À l'échec (ex: 409 email dupliqué) : erreurAuth.value = error.message.
+async function handleInscription({email, password}) {
+
+}
+
+// TODO : effacerToken(), token.value = null, exercices.value = [] (retour à l'écran de connexion, aucune
+// donnée de l'utilisateur précédent ne doit rester visible).
+function handleDeconnexion() {
+
+}
 
 async function handleAjouter(nouvelExercice) {
   try {
@@ -26,8 +66,7 @@ async function handleAjouter(nouvelExercice) {
     exercices.value.push(nouveau) ;
   }
   catch (error) {
-    console.log(error) ;
-    erreur.value = error.message ;
+    gererErreurApi(error) ;
   }
 }
 
@@ -46,8 +85,7 @@ async function handleAjustertempo(id, current, delta) {
     exercices.value[index] = exerciceModifie ;
   }
   catch (error) {
-    console.log(error) ;
-    erreur.value = error.message ;
+    gererErreurApi(error) ;
   }
 }
 
@@ -57,8 +95,7 @@ async function handleSupprimer (id) {
     exercices.value = exercices.value.filter(x => x._id !== id)
   }
   catch(error){
-    console.log(error) ;
-    erreur.value = error.message ;
+    gererErreurApi(error) ;
   }
 }
 </script>
@@ -67,11 +104,22 @@ async function handleSupprimer (id) {
   <main>
     <h1>DrumTempo</h1>
 
-    <p v-if="erreur" data-test="msg-erreur" class="erreur">{{ erreur }}</p>
+    <LoginForm
+      v-if="!estConnecte"
+      :erreur="erreurAuth"
+      @connexion="handleConnexion"
+      @inscription="handleInscription"
+    />
 
-    <ExerciseForm  @ajouter="handleAjouter" />
+    <template v-else>
+      <button data-test="btn-deconnexion" type="button" @click="handleDeconnexion">Déconnexion</button>
 
-    <ExerciseList :exercises="exercices" @supprimer="handleSupprimer" @ajuster-tempo="handleAjustertempo"/>
+      <p v-if="erreur" data-test="msg-erreur" class="erreur">{{ erreur }}</p>
+
+      <ExerciseForm @ajouter="handleAjouter" />
+
+      <ExerciseList :exercises="exercices" @supprimer="handleSupprimer" @ajuster-tempo="handleAjustertempo"/>
+    </template>
   </main>
 </template>
 

@@ -79,6 +79,29 @@
 - Implémentation de `ExerciseForm.vue` par l'utilisateur : bug trouvé en revue — `@submit.prevent` posé sur le `<button>` au lieu du `<form>` (l'événement `submit` ne se déclenche que sur le `<form>`), causant un rechargement natif de la page sans appel à l'API. Corrigé.
 - ✅ Étape 4 complétée et confirmée : cycle complet (ajout, +5/-5 BPM, suppression, persistance) fonctionnel de bout en bout
 
+## 2026-07-25 — Étape 7.1/7.2 : authentification frontend (plomberie + écran de connexion)
+
+- Plomberie écrite directement (Étape 7.1) : `AuthConfig.js` (endpoints login/register, clé `localStorage`),
+  `tokenStorage.js`, `httpClient.js` (extraction de `traiterReponse`, partagée avec `exerciseService.js`,
+  erreur enrichie d'un `.status` pour la détection du 401 à l'Étape 7.3), `authService.js` (`login`,
+  `register`), `exerciseService.js` mis à jour avec l'en-tête `Authorization: Bearer <token>` sur les 4 appels
+- Squelettes laissés en TODO pour l'utilisateur : `exerciseService.test.js`, `authService.test.js` (restent à
+  faire), `LoginForm.vue`, `LoginForm.test.js`
+- Implémentation de `LoginForm.vue` par l'utilisateur (Étape 7.2) : `basculerMode()` via table de
+  correspondance (`modeToggler`) plutôt qu'un if/else — jugé plus lisible et gardé tel quel malgré la règle
+  "aucune constante codée en dur" (valeurs strictement locales à ce composant, extraction jugée dogmatique
+  pour ce cas précis)
+- Bug trouvé en revue dans `soumettre()` : la charge utile émise était `(email.value, mode.value)` au lieu de
+  `{ email, password }` — le mot de passe n'était jamais transmis. Corrigé en une ligne :
+  `emit(mode.value, { email: email.value, password: motDePasse.value })` (le `switch` initial était
+  redondant, `mode.value` valant déjà le nom de l'événement à émettre)
+- `LoginForm.test.js` complété par l'utilisateur : 4 cas (connexion par défaut, bascule vers inscription,
+  double bascule qui revient à connexion, affichage du message d'erreur). Import résiduel non utilisé
+  (`TempoConfig`, copié depuis `ExerciseForm.test.js`) trouvé en revue et retiré
+- ✅ Étape 7.1 (plomberie) et 7.2 entièrement complétées et confirmées : `npm test` (frontend) tous verts.
+  Reste : tests `exerciseService.test.js`/`authService.test.js` (7.1) et orchestration `App.vue` (7.3,
+  `handleConnexion`/`handleInscription`/`handleDeconnexion`/gestion du 401 encore en TODO)
+
 ## 2026-07-22 — Étape 5.1 + 5.2 : Authentification & secrets
 
 - Dépendances ajoutées : `bcrypt`, `jsonwebtoken`, `dotenv` (+ types)

@@ -193,7 +193,7 @@ sans toucher à Mongo dev/Atlas), `@vue/test-utils` côté frontend.
 
 **Étape 6 (Tests automatisés + CI) entièrement complétée.**
 
-## Étape 7 : Frontend — intégration de l'authentification (à détailler)
+## Étape 7 : Frontend — intégration de l'authentification
 
 Constat (2026-07-23, découvert en préparant l'Étape 6.4) : le frontend (Étape 4) a été construit avant
 l'authentification backend (Étape 5.1/5.2) et n'a jamais été mis à jour. `exerciseService.js` n'envoie
@@ -201,9 +201,37 @@ aucun en-tête `Authorization`, et `App.vue` n'a ni formulaire de connexion/insc
 token — en l'état, l'application réelle recevrait un 401 sur chaque appel à `/api/exercises`. Non
 bloquant pour les tests (6.4 mocke `exerciseService`), mais à traiter avant tout déploiement réel.
 
-- [ ] Écran/formulaire de connexion et d'inscription (`POST /api/auth/login`, `/register`)
-- [ ] Stockage du token JWT côté client (à décider : `localStorage`, `sessionStorage`, ou en mémoire avec
-  re-connexion à chaque ouverture) et ajout de l'en-tête `Authorization: Bearer <token>` dans
-  `exerciseService.js`
-- [ ] Gestion de l'expiration du token (401 → redirection vers l'écran de connexion)
-- [ ] Bouton de déconnexion1    
+Décision validée (2026-07-24) : stockage du token en `localStorage` (persiste entre ouvertures de l'app —
+convient à un usage personnel sur iPhone, évite une reconnexion à chaque fois).
+
+### 7.1 — Services d'authentification (plomberie, écrite directement) ✅ (plomberie)
+- [x] `frontend/src/config/AuthConfig.js` : endpoints login/register, clé de stockage du token
+- [x] `frontend/src/services/tokenStorage.js` : lecture/écriture/suppression du token dans `localStorage`
+- [x] `frontend/src/services/httpClient.js` : extraction de `traiterReponse` (partagée entre
+  `exerciseService.js` et le nouveau `authService.js`), erreur enrichie d'un `status` (nécessaire pour
+  détecter un 401 dans `App.vue` à l'Étape 7.3)
+- [x] `frontend/src/services/authService.js` : `login()`, `register()`
+- [x] `exerciseService.js` mis à jour : en-tête `Authorization: Bearer <token>` sur les 4 appels
+- [ ] `exerciseService.test.js` et `authService.test.js` (squelettes avec TODOs, implémentation par
+  l'utilisateur) : mock du `fetch` global — comble aussi le trou de couverture déjà existant sur
+  `exerciseService.js` (jamais testé directement jusqu'ici, seulement mocké)
+  *Test manuel : `npm test` (frontend) — tous les cas passent.*
+
+### 7.2 — Écran de connexion/inscription ✅
+- [x] `LoginForm.vue` : formulaire email/mot de passe, bascule connexion/inscription, émet les identifiants
+  saisis (n'appelle pas `authService` directement — même patron que `ExerciseForm.vue`)
+- [x] `LoginForm.test.js` : 4 cas (connexion, bascule + inscription, double bascule, message d'erreur)
+  *Test manuel : `npm test` (frontend) — tous les cas passent. ✅ Confirmé le 2026-07-25.*
+
+### 7.3 — Orchestration dans `App.vue`
+- [ ] Affichage conditionnel : `LoginForm` si aucun token, app normale sinon (vérifié au montage)
+- [ ] Handlers de connexion/inscription (appel à `authService`, stockage du token au succès)
+- [ ] Gestion centralisée d'un 401 en cours d'usage (token expiré) → efface le token, retour à l'écran de
+  connexion
+- [ ] Bouton de déconnexion
+- [ ] Nouveaux cas ajoutés au squelette de `App.test.js`
+  *Test manuel : `npm test` (frontend) — tous les cas passent.*
+
+**Test manuel final (bout en bout)** : `docker-compose up --build`, dans le navigateur — inscription →
+connexion → ajout/ajustement/suppression d'exercices → rafraîchir la page reste connecté → déconnexion →
+rafraîchir redemande la connexion.
