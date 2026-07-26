@@ -7,6 +7,7 @@ import {creerExercice, listerExercices, mettreAJourTempo, supprimerExercice,} fr
 import {login, register} from './services/authService'
 import {obtenirToken, stockerToken, effacerToken} from './services/tokenStorage'
 import {TempoConfig} from "@/config/TempoConfig.js";
+import {AuthConfig} from "@/config/AuthConfig.js";
 
 const exercices = ref([])
 const erreur = ref(null)
@@ -26,38 +27,56 @@ async function chargerExercices() {
   }
 }
 
-// TODO : centralise la réaction à une erreur d'appel API. Utilisée dans tous les catch ci-dessous.
-// Si error.status === 401 (token expiré/invalide) : effacer le token (effacerToken()), remettre
-// token.value à null pour revenir à l'écran de connexion, réinitialiser exercices.value.
-// Sinon : comportement actuel, erreur.value = error.message.
+
 function gererErreurApi(error) {
   console.log(error) ;
-  erreur.value = error.message ;
+  if (error.status === 401) {
+    effacerToken() ;
+    token.value = null ;
+    exercices.value  = [] ;
+    erreurAuth.value = AuthConfig.SESSION_EXPIREE_MESSAGE ;
+  }
+  else {
+    erreur.value = error.message ;
+  }
 }
 
 onMounted(async () => {
   if (estConnecte.value) await chargerExercices() ;
 })
 
-// TODO : appelle authService.login(identifiants), et au succès :
-// stockerToken(reponse.token), token.value = reponse.token, erreurAuth.value = null, chargerExercices().
-// À l'échec (catch) : erreurAuth.value = error.message (ne PAS utiliser gererErreurApi ici, l'écran de
-// connexion n'est pas encore "dans l'app").
+
 async function handleConnexion({email, password}) {
-
+  try {
+    const loginResponse = await login({ email, password }) ;
+    stockerToken(loginResponse.token) ;
+    token.value = loginResponse.token ;
+    erreurAuth.value = null ;
+    await chargerExercices() ;
+  }
+  catch (error) {
+    console.log(error) ;
+    erreurAuth.value = error.message ;
+  }
 }
 
-// TODO : appelle authService.register(identifiants). Décision à prendre : connexion automatique après
-// inscription (réutiliser handleConnexion), ou affichage d'un message invitant à se connecter manuellement.
-// À l'échec (ex: 409 email dupliqué) : erreurAuth.value = error.message.
 async function handleInscription({email, password}) {
-
+  try {
+    await register({ email, password }) ;
+    await handleConnexion({email, password}) ;
+  }
+  catch (error) {
+    console.log(error) ;
+    erreurAuth.value = error.message ;
+  }
 }
 
-// TODO : effacerToken(), token.value = null, exercices.value = [] (retour à l'écran de connexion, aucune
-// donnée de l'utilisateur précédent ne doit rester visible).
-function handleDeconnexion() {
 
+function handleDeconnexion() {
+  effacerToken() ;
+  token.value = null ;
+  exercices.value = [] ;
+  erreur.value = null ;
 }
 
 async function handleAjouter(nouvelExercice) {
