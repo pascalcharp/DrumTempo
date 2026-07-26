@@ -223,14 +223,17 @@ convient à un usage personnel sur iPhone, évite une reconnexion à chaque fois
 - [x] `LoginForm.test.js` : 4 cas (connexion, bascule + inscription, double bascule, message d'erreur)
   *Test manuel : `npm test` (frontend) — tous les cas passent. ✅ Confirmé le 2026-07-25.*
 
-### 7.3 — Orchestration dans `App.vue`
-- [ ] Affichage conditionnel : `LoginForm` si aucun token, app normale sinon (vérifié au montage)
-- [ ] Handlers de connexion/inscription (appel à `authService`, stockage du token au succès)
-- [ ] Gestion centralisée d'un 401 en cours d'usage (token expiré) → efface le token, retour à l'écran de
-  connexion
-- [ ] Bouton de déconnexion
-- [ ] Nouveaux cas ajoutés au squelette de `App.test.js`
-  *Test manuel : `npm test` (frontend) — tous les cas passent.*
+### 7.3 — Orchestration dans `App.vue` ✅
+- [x] Affichage conditionnel : `LoginForm` si aucun token, app normale sinon (vérifié au montage)
+- [x] Handlers de connexion/inscription (appel à `authService`, stockage du token au succès ; inscription
+  enchaîne automatiquement sur `handleConnexion` — décision validée le 2026-07-25)
+- [x] Gestion centralisée d'un 401 en cours d'usage (token expiré) → efface le token, retour à l'écran de
+  connexion (message `AuthConfig.SESSION_EXPIREE_MESSAGE` affiché sur `LoginForm`)
+- [x] Bouton de déconnexion
+- [x] Nouveaux cas ajoutés au squelette de `App.test.js` : 5 cas (LoginForm sans token, connexion réussie,
+  échec de connexion, déconnexion, retour à la connexion sur 401)
+  *Test manuel : `npm test` (frontend) — tous les cas passent. ✅ Confirmé le 2026-07-25 : 38 tests, tous
+  verts.*
 
 **Test manuel final (bout en bout)** : `docker-compose up --build`, dans le navigateur — inscription →
 connexion → ajout/ajustement/suppression d'exercices → rafraîchir la page reste connecté → déconnexion →

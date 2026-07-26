@@ -102,6 +102,34 @@
   Reste : tests `exerciseService.test.js`/`authService.test.js` (7.1) et orchestration `App.vue` (7.3,
   `handleConnexion`/`handleInscription`/`handleDeconnexion`/gestion du 401 encore en TODO)
 
+## 2026-07-25 — Étape 7.3 : orchestration de l'authentification dans `App.vue`
+
+- Décision validée : inscription enchaîne automatiquement sur `handleConnexion` (pas de message "connectez-
+  vous manuellement") — `register()` puis réutilisation de `handleConnexion({email, password})`
+- `handleConnexion`, `handleInscription`, `handleDeconnexion` implémentés par l'utilisateur à partir du
+  squelette avec indices
+- Bug trouvé en revue dans `gererErreurApi` (branche 401) : le message "Session expirée" était écrit dans
+  `erreur.value` au lieu de `erreurAuth.value`. Or dès qu'un 401 survient, `token.value` passe à `null` et le
+  template bascule vers `<LoginForm :erreur="erreurAuth">` — le paragraphe lié à `erreur` (dans le bloc
+  `v-else`, réservé à la session active) ne s'affiche plus du tout à ce moment. Le message était donc perdu
+  silencieusement. Corrigé en écrivant dans `erreurAuth.value`
+- Constante `AuthConfig.SESSION_EXPIREE_MESSAGE` ajoutée (message flaggé comme "à confirmer" par
+  l'utilisateur lui-même dans un commentaire ; extraction jugée justifiée ici — contrairement à
+  `modeToggler` — car il existe un précédent direct dans le projet (`ApiConfig.messageErreurHttpParDefaut`
+  pour le même type de message HTTP)
+- 5 cas ajoutés à `App.test.js` par l'utilisateur (squelette avec indices) : écran de connexion sans token,
+  connexion réussie, échec de connexion, déconnexion, retour à la connexion sur 401 (ce dernier vérifie
+  explicitement `props('erreur') === AuthConfig.SESSION_EXPIREE_MESSAGE`, plutôt qu'un littéral dupliqué)
+- Deux nettoyages mineurs trouvés en revue et corrigés : imports morts (`listerExercices`, `obtenirToken`
+  importés directement en plus des namespaces `exerciseService`/`tokenStorage`, jamais utilisés sous cette
+  forme — résidu de copier-coller) et `await` manquant sur `disconnectButtonWrapper.trigger('click')`
+  (incohérent avec le reste du fichier, source potentielle de flakiness si `handleDeconnexion` devenait un
+  jour asynchrone)
+- ✅ **Étape 7.3 entièrement complétée et confirmée le 2026-07-25** : `npm test` (frontend) — 38 tests, tous
+  verts. **Étape 7 (authentification frontend) essentiellement complète** — reste `exerciseService.test.js`/
+  `authService.test.js` (squelettes 7.1 encore en TODO) et le test manuel final de bout en bout via
+  `docker-compose up --build`
+
 ## 2026-07-22 — Étape 5.1 + 5.2 : Authentification & secrets
 
 - Dépendances ajoutées : `bcrypt`, `jsonwebtoken`, `dotenv` (+ types)
