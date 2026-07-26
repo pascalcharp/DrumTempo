@@ -8,6 +8,7 @@ import * as authService from './services/authService';
 import * as tokenStorage from './services/tokenStorage';
 import { TempoConfig } from './config/TempoConfig';
 import ExerciseForm from "@/components/ExerciseForm.vue";
+import {AuthConfig} from "@/config/AuthConfig.js";
 
 
 // Remplace automatiquement chaque fonction exportée par exerciseService.js/authService.js/tokenStorage.js
@@ -49,7 +50,7 @@ describe('App', () => {
 
   it("affiche un message d'erreur si le chargement échoue", async () => {
     exerciseService.listerExercices.mockRejectedValue(new Error('Erreur réseau'))
-    // mount(App), await flushPromises(), vérifier que le message d'erreur est affiché (wrapper.text())
+
     const wrapper = mount(App) ;
     await flushPromises() ;
 
@@ -149,51 +150,78 @@ describe('App', () => {
   });
 
   it("affiche LoginForm quand aucun token n'est stocké", async () => {
-    // TODO : tokenStorage.obtenirToken.mockReturnValue(null)
-    // mount(App), await flushPromises()
-    // Vérifier wrapper.findAllComponents(LoginForm) a une longueur de 1
-    // Vérifier wrapper.findAllComponents(ExerciseList) a une longueur de 0
-    // Vérifier que exerciseService.listerExercices n'a PAS été appelé (pas de fuite de données sans session)
+    tokenStorage.obtenirToken.mockReturnValue(null)
+    const appWrapper = mount(App) ;
+    await flushPromises() ;
+
+    expect(appWrapper.findAllComponents(LoginForm) ).toHaveLength(1);
+    expect(appWrapper.findAllComponents(ExerciseList) ).toHaveLength(0) ;
+    expect(exerciseService.listerExercices).not.toHaveBeenCalled() ;
   });
 
   it('se connecte avec succès : stocke le token et charge les exercices', async () => {
-    // TODO : tokenStorage.obtenirToken.mockReturnValue(null)
-    // authService.login.mockResolvedValue({ token: 'nouveau-token' })
-    // exerciseService.listerExercices.mockResolvedValue([])
-    // mount(App), await flushPromises()
-    // wrapper.findComponent(LoginForm).vm.$emit('connexion', { email: '...', password: '...' })
-    // await flushPromises()
-    // Vérifier tokenStorage.stockerToken appelé avec 'nouveau-token'
-    // Vérifier wrapper.findAllComponents(ExerciseList) a maintenant une longueur de 1
+
+    tokenStorage.obtenirToken.mockReturnValue(null) ;
+    authService.login.mockResolvedValue({ token: 'nouveau-token' }) ;
+    exerciseService.listerExercices.mockResolvedValue([]) ;
+
+    const appWrapper = mount(App) ;
+    await flushPromises() ;
+
+    appWrapper.findComponent(LoginForm).vm.$emit('connexion', { email: 'user@good.login', password: 'validpassword' }) ;
+    await flushPromises() ;
+    expect(authService.login).toHaveBeenCalledWith({email: 'user@good.login', password: 'validpassword' }) ;
+    expect(tokenStorage.stockerToken).toHaveBeenCalledWith('nouveau-token') ;
+    expect(appWrapper.findAllComponents(LoginForm) ).toHaveLength(0) ;
+    expect(appWrapper.findAllComponents(ExerciseList) ).toHaveLength(1) ;
+
   });
 
   it("affiche l'erreur de connexion sur échec (identifiants invalides)", async () => {
-    // TODO : tokenStorage.obtenirToken.mockReturnValue(null)
-    // authService.login.mockRejectedValue(new Error('Identifiants invalides'))
-    // mount(App), await flushPromises()
-    // wrapper.findComponent(LoginForm).vm.$emit('connexion', { email: '...', password: '...' })
-    // await flushPromises()
-    // Vérifier que LoginForm reçoit la prop erreur === 'Identifiants invalides'
-    // Vérifier que LoginForm est toujours affiché (pas de connexion)
+    tokenStorage.obtenirToken.mockReturnValue(null) ;
+    authService.login.mockRejectedValue(new Error('Identifiants invalides')) ;
+    const appWrapper = mount(App) ;
+    await flushPromises() ;
+
+    appWrapper.findComponent(LoginForm).vm.$emit('connexion', { email: 'bad@user.com', password: 'invalidpassword' }) ;
+    await flushPromises()
+
+    expect(appWrapper.findAllComponents(LoginForm) ).toHaveLength(1) ;
+    expect(appWrapper.findAllComponents(ExerciseList) ).toHaveLength(0) ;
+    expect(exerciseService.listerExercices).not.toHaveBeenCalled() ;
+    expect(appWrapper.findComponent(LoginForm).props('erreur')).toBe('Identifiants invalides') ;
+
   });
 
   it('se déconnecte et revient à l\'écran de connexion', async () => {
-    // TODO : exerciseService.listerExercices.mockResolvedValue([])
-    // mount(App), await flushPromises() — session déjà active (mock par défaut du beforeEach)
-    // Cliquer '[data-test="btn-deconnexion"]'
-    // await flushPromises()
-    // Vérifier tokenStorage.effacerToken appelé
-    // Vérifier wrapper.findAllComponents(LoginForm) a une longueur de 1
+    exerciseService.listerExercices.mockResolvedValue([])
+
+    const appWrapper = mount(App) ;
+    await flushPromises() ;
+
+    const disconnectButtonWrapper = appWrapper.find('[data-test="btn-deconnexion"]') ;
+    await disconnectButtonWrapper.trigger('click') ;
+    await flushPromises() ;
+
+    expect(tokenStorage.effacerToken).toHaveBeenCalled() ;
+    expect(appWrapper.findAllComponents(LoginForm)).toHaveLength(1) ;
+    expect(appWrapper.findAllComponents(ExerciseList) ).toHaveLength(0) ;
   });
 
   it("revient à l'écran de connexion si un appel API échoue avec 401 (token expiré)", async () => {
-    // TODO : exerciseService.listerExercices.mockResolvedValue([{ _id: '1', name: 'Paradiddle', current_tempo: 100 }])
-    // mount(App), await flushPromises() — session déjà active
-    // const erreur401 = new Error('Non autorisé') ; erreur401.status = 401
-    // exerciseService.supprimerExercice.mockRejectedValue(erreur401)
-    // wrapper.findComponent(ExerciseList).vm.$emit('supprimer', '1')
-    // await flushPromises()
-    // Vérifier tokenStorage.effacerToken appelé
-    // Vérifier wrapper.findAllComponents(LoginForm) a une longueur de 1
+    exerciseService.listerExercices.mockResolvedValue([{ _id: '1', name: 'Paradiddle', current_tempo: 100 }]) ;
+    const appWrapper = mount(App);
+    await flushPromises() ;
+    const erreur401 = new Error('Non autorisé') ;
+    erreur401.status = 401
+    exerciseService.supprimerExercice.mockRejectedValue(erreur401) ;
+    appWrapper.findComponent(ExerciseList).vm.$emit('supprimer', '1')
+    await flushPromises()
+
+    expect(tokenStorage.effacerToken).toHaveBeenCalled() ;
+    expect(appWrapper.findAllComponents(LoginForm) ).toHaveLength(1) ;
+    expect(appWrapper.findAllComponents(ExerciseList) ).toHaveLength(0) ;
+    expect(appWrapper.findComponent(LoginForm).props('erreur')).toBe(AuthConfig.SESSION_EXPIREE_MESSAGE) ;
+
   });
 });
