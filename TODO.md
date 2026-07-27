@@ -246,4 +246,76 @@ convient à un usage personnel sur iPhone, évite une reconnexion à chaque fois
   actuel volontaire, voir DEVLOG) : l'inscription prend 2 clics (bascule de mode puis soumission) et enchaîne
   directement sur la connexion sans écran de confirmation intermédiaire.*
 
+## Étape 8 : Déploiement en production
+
+Contexte : l'app est fonctionnelle et entièrement testée (Étape 7). On met en œuvre l'architecture documentée
+en 5.8. Fournisseurs retenus (décision prise le 2026-07-26, utilisateur novice en déploiement — priorité à la
+simplicité et à la documentation disponible plutôt qu'à l'optimisation de coût) :
+- **Cloudflare** : registraire de domaine + DNS + CDN + WAF (un seul tableau de bord pour tout, évite un
+  aller-retour entre un registraire tiers et Cloudflare)
+- **DigitalOcean** : VPS pour le backend (tutoriels "DigitalOcean Community" abondants pour cette pile
+  exacte : Ubuntu + Docker + Caddy)
+- **Vercel** : hébergement du frontend statique (déploiement Vite zéro-config, intégration GitHub → build
+  automatique à chaque push)
+- **MongoDB Atlas M0** et **Caddy** : déjà décidés en 5.8 (base managée gratuite ; reverse proxy à TLS
+  automatique via certificat Cloudflare Origin CA, mode "Full strict")
+
+Coût estimé : ~7-10$/mois (droplet DigitalOcean ~6$ + domaine ~1-2$/mois amorti ; Cloudflare, Vercel et
+Atlas M0 gratuits à cette échelle).
+
+### 8.1 — Nom de domaine & Cloudflare
+- [ ] Enregistrer un nom de domaine via Cloudflare Registrar
+- [ ] Domaine actif sur Cloudflare avec le proxy activé (nuage orange) pour les futurs sous-domaines
+  `app.` et `api.`
+  *Test manuel : `dig`/`nslookup` du domaine renvoie des IP Cloudflare ; le domaine apparaît "actif" dans
+  le tableau de bord Cloudflare.*
+
+### 8.2 — MongoDB Atlas M0 (base de données managée)
+- [ ] Créer un compte Atlas, un cluster M0 gratuit (région la plus proche disponible)
+- [ ] Créer un utilisateur applicatif dédié (droits limités à la base `drumtempo`, distinct du compte admin
+  Atlas)
+- [ ] Restreindre l'accès réseau (IP allowlist) à l'IP du VPS une fois celui-ci créé (8.3) — pas
+  `0.0.0.0/0`
+- [ ] Récupérer la chaîne de connexion `mongodb+srv://`
+  *Test manuel : connexion via `mongosh` depuis le poste local (IP autorisée temporairement) confirme
+  lecture/écriture ; l'IP locale est ensuite retirée de l'allowlist.*
+
+### 8.3 — VPS DigitalOcean & durcissement de base
+- [ ] Créer un droplet (Ubuntu LTS, plus petit plan suffisant)
+- [ ] Accès SSH par clé uniquement (mot de passe désactivé), utilisateur non-root avec `sudo`, pare-feu
+  (`ufw`) limité aux ports 22/80/443
+- [ ] Installer Docker et Docker Compose sur le droplet
+  *Test manuel : une connexion SSH par mot de passe est refusée ; `ufw status` confirme les ports ouverts ;
+  `docker --version` répond sur le VPS.*
+
+### 8.4 — Déploiement du backend (Caddy + conteneur backend)
+- [ ] `docker-compose.prod.yml` (ou override) : retrait du service `db` (remplacé par Atlas), `MONGO_URI`
+  pointé vers Atlas, ajout de Caddy comme reverse proxy devant le conteneur backend
+- [ ] `Caddyfile` : `api.tondomaine.com` → conteneur backend, TLS via certificat Cloudflare Origin CA (mode
+  "Full strict", comme documenté en 5.8)
+- [ ] `CORS_ORIGIN` mis à jour avec le domaine Vercel définitif (`app.tondomaine.com`)
+- [ ] Secrets de production (`JWT_SECRET`, `MONGO_URI`) dans un `.env` local au VPS uniquement, jamais
+  commité (même principe que 5.2, nouvel environnement)
+  *Test manuel : `https://api.tondomaine.com/health` répond 200 avec certificat valide (cadenas navigateur) ;
+  `auth.http`/`exercises.http` rejoués contre l'URL de production.*
+
+### 8.5 — Déploiement du frontend (Vercel)
+- [ ] Connecter le dépôt GitHub à Vercel, `VITE_API_URL` configuré vers `api.tondomaine.com`
+- [ ] `app.tondomaine.com` pointé vers Vercel via un enregistrement DNS Cloudflare (CNAME)
+  *Test manuel : `https://app.tondomaine.com` charge l'app ; cycle complet (inscription/connexion/CRUD)
+  fonctionne contre le backend de production.*
+
+### 8.6 — Pipeline de déploiement automatisé (CD)
+- [ ] Vercel : déploiement automatique déjà natif via l'intégration GitHub (à vérifier/activer)
+- [ ] Backend : étendre `.github/workflows` avec un job de déploiement (déclenché après succès des tests sur
+  `main`) qui se connecte au VPS et relance les conteneurs avec la nouvelle image
+  *Test manuel : un commit sur `main` déclenche tests → déploiement automatique → nouvelle version visible
+  en production, sans intervention manuelle.*
+
+### 8.7 — Vérification finale de bout en bout en production
+- [ ] Reprendre le scénario de test manuel de l'Étape 7 (inscription/connexion/CRUD/persistance/
+  déconnexion), cette fois sur les URLs de production, idéalement depuis un iPhone en réseau cellulaire
+  (pas seulement en Wi-Fi local)
+  *Test manuel : cycle complet réussi en conditions réelles d'utilisation.*
+
 **Étape 7 (frontend — intégration de l'authentification) entièrement complétée.**
