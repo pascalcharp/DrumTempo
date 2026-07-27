@@ -15,6 +15,34 @@ Le projet n'est pas encore déployé, alors les développeurs intéressés peuve
 Il faut configurer les variables d'environnement dans un fichier ```.env``` pour configurer l'authentification entre le backend et la base de données.  Il faut ensuite configurer l'adresse IP du serveur frontend afin d'y accéder sur un portable.  
 Le serveur frontend est aussi accessible sur la machine locale à ```localhost:5173```.  Il suffit ensuite d'utiliser ```docker-compose``` pour faire démarrer le tout.
 
+## Pile Technologique (Tech Stack)
+- **Frontend** : Vue.js 3 (Composition API), JavaScript moderne, CSS Mobile-First.
+- **Backend** : Node.js avec Express, écrit en TypeScript.
+- **Base de données** : MongoDB (NoSQL).
+- **Déploiement** : Docker et Docker Compose.
+
+## Modèle de Données (MongoDB / Mongoose)
+Collection `exercises` :
+- `name` : String (Requis, unique, ex: "Paradiddle")
+- `current_tempo` : Number | null (Optionnel, entre TEMPO_MIN=40 et TEMPO_MAX=300 — null si aucun tempo encore déterminé)
+- `updated_at` : Date (Horodatage automatique via les timestamps Mongoose)
+
+## Architecture Docker
+L'application est divisée en 3 conteneurs orchestrés par `docker-compose.yml` :
+1. `drumtempo-db` : Image officielle MongoDB, volume persistant pour les données.
+2. `drumtempo-backend` : Node.js/TypeScript, expose l'API REST sur le port 3000.
+3. `drumtempo-frontend` : Vue.js (Vite), expose l'application sur le port 5173.
+
+## Normes de Codage (Code Style)
+- **Backend** : TypeScript strict. Utilisation de Mongoose pour typer les modèles.
+- **Frontend** : Vue.js 3 avec la syntaxe `<script setup>`. CSS épuré avec de grandes zones de clic pour usage mobile.
+- **Réseau** : Le frontend communique avec le backend via des variables d'environnement (`VITE_API_URL`).
+
+## Commandes de Démarrage (Docker)
+- Lancer tout l'environnement : `docker-compose up --build`
+- Arrêter les conteneurs : `docker-compose down`
+- Voir les logs du backend : `docker-compose logs -f backend`
+
 ## Backend — Documentation de l'API
 
 Une documentation interactive (OpenAPI / Swagger UI) est générée automatiquement à partir des annotations
