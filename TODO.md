@@ -204,7 +204,7 @@ bloquant pour les tests (6.4 mocke `exerciseService`), mais à traiter avant tou
 Décision validée (2026-07-24) : stockage du token en `localStorage` (persiste entre ouvertures de l'app —
 convient à un usage personnel sur iPhone, évite une reconnexion à chaque fois).
 
-### 7.1 — Services d'authentification (plomberie, écrite directement) ✅ (plomberie)
+### 7.1 — Services d'authentification (plomberie, écrite directement) ✅
 - [x] `frontend/src/config/AuthConfig.js` : endpoints login/register, clé de stockage du token
 - [x] `frontend/src/services/tokenStorage.js` : lecture/écriture/suppression du token dans `localStorage`
 - [x] `frontend/src/services/httpClient.js` : extraction de `traiterReponse` (partagée entre
@@ -212,10 +212,13 @@ convient à un usage personnel sur iPhone, évite une reconnexion à chaque fois
   détecter un 401 dans `App.vue` à l'Étape 7.3)
 - [x] `frontend/src/services/authService.js` : `login()`, `register()`
 - [x] `exerciseService.js` mis à jour : en-tête `Authorization: Bearer <token>` sur les 4 appels
-- [ ] `exerciseService.test.js` et `authService.test.js` (squelettes avec TODOs, implémentation par
-  l'utilisateur) : mock du `fetch` global — comble aussi le trou de couverture déjà existant sur
-  `exerciseService.js` (jamais testé directement jusqu'ici, seulement mocké)
-  *Test manuel : `npm test` (frontend) — tous les cas passent.*
+- [x] `exerciseService.test.js` et `authService.test.js` (écrits par l'utilisateur) : mock du `fetch`
+  global — comble aussi le trou de couverture déjà existant sur `exerciseService.js` (jamais testé
+  directement jusqu'ici, seulement mocké)
+  *Test manuel : `npm test` (frontend) — tous les cas passent. ✅ Confirmé le 2026-07-26 : `authService.test.js`
+  (4 cas : login succès, login 401, register succès, register 409) et `exerciseService.test.js` (5 cas :
+  en-tête Authorization, parsing JSON réussi, message d'erreur du corps, message de fallback, 204→null),
+  tous verts.*
 
 ### 7.2 — Écran de connexion/inscription ✅
 - [x] `LoginForm.vue` : formulaire email/mot de passe, bascule connexion/inscription, émet les identifiants

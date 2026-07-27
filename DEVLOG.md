@@ -423,4 +423,23 @@
 - Vérification du chemin d'échec (plan de test de `TODO.md`) : assertion volontairement cassée dans
   `ExerciseList.test.js` (`toHaveLength(2)` → `toHaveLength(3)`), commit+push → workflow rouge confirmé sur
   GitHub ; assertion restaurée, commit+push → workflow vert de nouveau
+
+## 2026-07-26 — Étape 7.1 : tests `authService.test.js` et `exerciseService.test.js`
+
+- `frontend/src/services/authService.test.js` : 4 cas — `login()` retourne le token à la connexion réussie,
+  `login()` lance une erreur 401 (identifiants invalides), `register()` retourne l'utilisateur créé,
+  `register()` lance une erreur 409 (email déjà utilisé). Mock du `fetch` global (`vi.stubGlobal`), même
+  patron que les tests backend d'auth
+  - Coquille relevée en revue : une assertion `toMatchObject({ messsage: ... })` (typo, trois "s") comparait
+    une clé inexistante et masquait le vrai diff (`Error {status: 401}` sans le message attendu) — corrigée
+    en `message`
+- `frontend/src/services/exerciseService.test.js` : 5 cas — en-tête `Authorization: Bearer <token>` envoyé
+  sur les appels authentifiés (token lu depuis `localStorage` via `AuthConfig.TOKEN_STORAGE_KEY`), corps JSON
+  parsé sur réponse OK, erreur avec le message du corps JSON sur réponse non-OK, erreur avec le message de
+  fallback (`ApiConfig.messageErreurHttpParDefaut`) si le corps n'a pas de `message`, `null` retourné sur une
+  réponse 204 (suppression) — couvre la logique partagée `enTetesAuthentifies`/`traiterReponse`, jamais
+  testée directement jusqu'ici (seulement mockée dans `App.test.js`)
+- ✅ **Étape 7.1 entièrement complétée et confirmée le 2026-07-26** : `npm test` (frontend) — 7 fichiers,
+  38 tests, tous verts. Il ne reste, pour clore l'Étape 7 au complet, que le test manuel de bout en bout
+  (`docker-compose up --build`)
 - ✅ **Étape 6 (Tests automatisés + CI) entièrement complétée**
