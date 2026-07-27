@@ -238,6 +238,12 @@ convient à un usage personnel sur iPhone, évite une reconnexion à chaque fois
   *Test manuel : `npm test` (frontend) — tous les cas passent. ✅ Confirmé le 2026-07-25 : 38 tests, tous
   verts.*
 
-**Test manuel final (bout en bout)** : `docker-compose up --build`, dans le navigateur — inscription →
-connexion → ajout/ajustement/suppression d'exercices → rafraîchir la page reste connecté → déconnexion →
-rafraîchir redemande la connexion.
+- [x] **Test manuel final (bout en bout)** : `docker-compose up --build`, dans le navigateur — inscription →
+  connexion → ajout/ajustement/suppression d'exercices → rafraîchir la page reste connecté → déconnexion →
+  rafraîchir redemande la connexion.
+  *✅ Confirmé le 2026-07-26 : authentification, mots de passe trop courts/incorrects rejetés, CRUD
+  exercices et déconnexion tous fonctionnels. Point UX à améliorer plus tard (pas un bug — comportement
+  actuel volontaire, voir DEVLOG) : l'inscription prend 2 clics (bascule de mode puis soumission) et enchaîne
+  directement sur la connexion sans écran de confirmation intermédiaire.*
+
+**Étape 7 (frontend — intégration de l'authentification) entièrement complétée.**

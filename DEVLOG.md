@@ -442,4 +442,19 @@
 - ✅ **Étape 7.1 entièrement complétée et confirmée le 2026-07-26** : `npm test` (frontend) — 7 fichiers,
   38 tests, tous verts. Il ne reste, pour clore l'Étape 7 au complet, que le test manuel de bout en bout
   (`docker-compose up --build`)
+
+## 2026-07-26 — Étape 7 : test manuel final de bout en bout
+
+- `docker-compose up --build -V` : inscription, connexion, mots de passe trop courts/incorrects rejetés,
+  CRUD exercices complet (ajout/ajustement/suppression), persistance de session après rafraîchissement,
+  déconnexion, redemande de connexion après rafraîchissement une fois déconnecté — tous fonctionnels
+- Point UX relevé par l'utilisateur, analysé et confirmé **non bogué** : l'inscription demande 2 clics
+  (bascule vers le mode inscription, puis soumission) et enchaîne directement sur la connexion sans écran
+  de confirmation intermédiaire — comportement conforme à la décision validée le 2026-07-25 (auto-connexion
+  après inscription). `mode.value` piloté par un seul `ref`, lu à la fois par le texte affiché et par
+  `soumettre()` dans le même rendu — aucune désynchronisation possible entre les deux boutons. Repoussé à
+  une amélioration UX future (ex. message "Inscription réussie" avant la transition), pas une correction
+  urgente
+- ✅ **Étape 7 (frontend — intégration de l'authentification) entièrement complétée et confirmée le
+  2026-07-26.**
 - ✅ **Étape 6 (Tests automatisés + CI) entièrement complétée**
