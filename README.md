@@ -1,6 +1,19 @@
-# drum_companion
+# DrumTempo
 
-This template should help get you started developing with Vue 3 in Vite.
+## C'est quoi?
+
+DrumTempo est un petit programme web qui s'adresse aux adeptes de la batterie.  Il esst destiné à enregistrer vos meilleurs tempos lors de vos pratiques de batterie, pour chacun de vos rudiments ou exercices.
+
+## Comment ça marche?
+
+Vous accédez au site web, vous vous inscrivez, ou vous vous connectez.  Une fois sur votre page de DrumTempo, vous inscrivez un rudiment que vous pratiquez, et le meilleur tempo obtenu pour ce rudiment.  À chaque fois que vous 
+réussissez à augmenter votre tempo, vous l'augmentez sur la page web, et DrumTempo se rappellera de vos tempos pour chaque rudiment inscrit.  Vous pouvez aussi diminuer le tempo pour un exercice, et supprimer un exercice que vous ne pratiquez plus.
+
+## Comment installer et faire fonctionner DrumTempo
+
+Le projet n'est pas encore déployé, alors les développeurs intéressés peuvent le faire fonctionner facilement en clonant le dépôt git, et en démarrant les conteneurs dockers appropriés.  Des instructions se trouvent dans les sections suivantes.
+Il faut configurer les variables d'environnement dans un fichier ```.env``` pour configurer l'authentification entre le backend et la base de données.  Il faut ensuite configurer l'adresse IP du serveur frontend afin d'y accéder sur un portable.  
+Le serveur frontend est aussi accessible sur la machine locale à ```localhost:5173```.  Il suffit ensuite d'utiliser ```docker-compose``` pour faire démarrer le tout.
 
 ## Backend — Documentation de l'API
 
