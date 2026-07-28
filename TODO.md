@@ -276,7 +276,7 @@ Atlas M0 gratuits à cette échelle).
 - [x] Créer un compte Atlas, un cluster M0 gratuit (région la plus proche disponible)
 - [x] Créer un utilisateur applicatif dédié (droits limités à la base `drumtempo`, distinct du compte admin
   Atlas)
-- [ ] Restreindre l'accès réseau (IP allowlist) à l'IP du VPS une fois celui-ci créé (8.3) — pas
+- [x] Restreindre l'accès réseau (IP allowlist) à l'IP du VPS une fois celui-ci créé (8.3) — pas
   `0.0.0.0/0` (allowlist actuellement limitée à l'IP locale, temporaire — à remplacer par l'IP du VPS en 8.3)
 - [x] Récupérer la chaîne de connexion `mongodb+srv://`
   *Test manuel : connexion via `mongosh` depuis le poste local (IP autorisée temporairement) confirme
