@@ -480,3 +480,35 @@
 - Étape 8.2 quasi complète — seule la restriction réseau finale (allowlist → IP du VPS) reste en suspens,
   dépendante de l'Étape 8.3
 - Prochaine étape : 8.3 (VPS DigitalOcean & durcissement de base)
+
+## 2026-07-28 — Étape 8.3 : VPS DigitalOcean & durcissement de base
+
+- Droplet Ubuntu LTS créé sur DigitalOcean, login root initial via clé SSH
+- Utilisateur non-root `deploy` créé avec `sudo`, clé SSH copiée depuis `authorized_keys` de root
+- Bug de connexion trouvé et résolu : `ssh deploy@<IP>` refusait la clé (`Permission denied (publickey)`)
+  malgré des permissions et un contenu de `authorized_keys` corrects. Diagnostic par élimination
+  (permissions du fichier, du répertoire `.ssh`, de `/home/deploy`, de `/home`, config `sshd` et ses
+  drop-in `cloud-init` — tout en ordre) jusqu'à la sortie verbeuse du client (`ssh -v`) : le fingerprint de
+  la clé offerte par l'agent SSH local ne correspondait pas à celui présent dans `authorized_keys`. Cause
+  réelle : la paire de clés dédiée à DigitalOcean (`~/.ssh/digitalocean`/`.pub`) n'est pas un nom de fichier
+  d'identité par défaut (`id_ed25519`, etc.), donc jamais offerte automatiquement par le client SSH — corrigé
+  en ajoutant une entrée `Host drumtempo-vps` dans `~/.ssh/config` local avec `IdentityFile
+  ~/.ssh/digitalocean` et `IdentitiesOnly yes`
+- Authentification par mot de passe confirmée désactivée (`PasswordAuthentication no`, déjà présent via les
+  drop-in `cloud-init` de l'image Ubuntu)
+- Login root SSH désactivé (`PermitRootLogin no` dans `sshd_config`, `systemctl restart ssh`)
+- Pare-feu `ufw` configuré : `22` (OpenSSH), `80`, `443` en `ALLOW`, activé
+- Docker et le plugin Docker Compose installés (script officiel `get-docker.sh`), utilisateur `deploy`
+  ajouté au groupe `docker`
+- ✅ Confirmé le 2026-07-28 : mot de passe refusé, root désactivé, `ufw status` conforme, `docker run
+  hello-world` réussi
+- ✅ **Étape 8.3 entièrement complétée.** Prochaine étape : 8.4 (déploiement du backend — Caddy + conteneur
+  backend)
+
+## 2026-07-28 — Finalisation de l'allowlist Atlas (Étape 8.2)
+
+- IP locale (temporaire) retirée de Network Access, remplacée par l'IP publique du VPS (`142.93.146.19/32`)
+- ✅ Confirmé le 2026-07-28 : connexion à Atlas confirmée perméable depuis le VPS, et confirmée refusée
+  depuis le poste local — preuve que l'allowlist est bien restrictive
+- ✅ **Étape 8.2 entièrement complétée.** Prochaine étape : 8.4 (déploiement du backend — Caddy + conteneur
+  backend)

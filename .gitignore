@@ -17,6 +17,11 @@ coverage
 # Secrets
 .env
 !.env.example
+.env.prod
+!.env.prod.example
+
+# Certificats Cloudflare Origin CA (VPS de production uniquement)
+caddy/certs/
 
 # Editor directories and files
 .vscode/*
