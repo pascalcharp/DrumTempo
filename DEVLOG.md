@@ -458,3 +458,25 @@
 - ✅ **Étape 7 (frontend — intégration de l'authentification) entièrement complétée et confirmée le
   2026-07-26.**
 - ✅ **Étape 6 (Tests automatisés + CI) entièrement complétée**
+
+## 2026-07-27 — Étape 8.1 : Nom de domaine & Cloudflare
+
+- Domaine `drumtempo.com` enregistré via Cloudflare Registrar (1 an)
+- DNS configuré : enregistrements placeholder `app.`/`api.` créés, proxy Cloudflare activé (nuage orange)
+  — cibles réelles à ajuster en 8.4 (VPS) et 8.5 (Vercel)
+- ✅ Confirmé le 2026-07-27 : `dig` renvoie des IP Cloudflare, domaine "actif" au tableau de bord,
+  `nslookup` confirme les nameservers Cloudflare
+- ✅ **Étape 8.1 entièrement complétée.** Prochaine étape : 8.2 (MongoDB Atlas M0)
+
+## 2026-07-27 — Étape 8.2 : MongoDB Atlas M0
+
+- Compte Atlas et cluster M0 gratuit créés
+- Utilisateur applicatif dédié créé (`readWrite` limité à la base `drumtempo`, distinct du compte admin
+  Atlas)
+- Chaîne de connexion `mongodb+srv://` récupérée
+- Accès réseau limité temporairement à l'IP locale (le temps du test) — sera remplacé par l'IP du VPS une
+  fois celui-ci créé (Étape 8.3), pas laissé à `0.0.0.0/0`
+- ✅ Confirmé le 2026-07-27 : connexion `mongosh` réussie, lecture/écriture/suppression confirmées
+- Étape 8.2 quasi complète — seule la restriction réseau finale (allowlist → IP du VPS) reste en suspens,
+  dépendante de l'Étape 8.3
+- Prochaine étape : 8.3 (VPS DigitalOcean & durcissement de base)

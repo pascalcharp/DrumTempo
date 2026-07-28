@@ -263,22 +263,26 @@ simplicité et à la documentation disponible plutôt qu'à l'optimisation de co
 Coût estimé : ~7-10$/mois (droplet DigitalOcean ~6$ + domaine ~1-2$/mois amorti ; Cloudflare, Vercel et
 Atlas M0 gratuits à cette échelle).
 
-### 8.1 — Nom de domaine & Cloudflare
-- [ ] Enregistrer un nom de domaine via Cloudflare Registrar
-- [ ] Domaine actif sur Cloudflare avec le proxy activé (nuage orange) pour les futurs sous-domaines
+### 8.1 — Nom de domaine & Cloudflare ✅
+- [x] Enregistrer un nom de domaine via Cloudflare Registrar
+- [x] Domaine actif sur Cloudflare avec le proxy activé (nuage orange) pour les futurs sous-domaines
   `app.` et `api.`
   *Test manuel : `dig`/`nslookup` du domaine renvoie des IP Cloudflare ; le domaine apparaît "actif" dans
-  le tableau de bord Cloudflare.*
+  le tableau de bord Cloudflare. ✅ Confirmé le 2026-07-27 : domaine `drumtempo.com` enregistré (1 an), DNS
+  configuré (enregistrements placeholder `app.`/`api.` proxifiés), `dig`, statut "actif" et `nslookup` (NS
+  Cloudflare) tous confirmés.*
 
 ### 8.2 — MongoDB Atlas M0 (base de données managée)
-- [ ] Créer un compte Atlas, un cluster M0 gratuit (région la plus proche disponible)
-- [ ] Créer un utilisateur applicatif dédié (droits limités à la base `drumtempo`, distinct du compte admin
+- [x] Créer un compte Atlas, un cluster M0 gratuit (région la plus proche disponible)
+- [x] Créer un utilisateur applicatif dédié (droits limités à la base `drumtempo`, distinct du compte admin
   Atlas)
 - [ ] Restreindre l'accès réseau (IP allowlist) à l'IP du VPS une fois celui-ci créé (8.3) — pas
-  `0.0.0.0/0`
-- [ ] Récupérer la chaîne de connexion `mongodb+srv://`
+  `0.0.0.0/0` (allowlist actuellement limitée à l'IP locale, temporaire — à remplacer par l'IP du VPS en 8.3)
+- [x] Récupérer la chaîne de connexion `mongodb+srv://`
   *Test manuel : connexion via `mongosh` depuis le poste local (IP autorisée temporairement) confirme
-  lecture/écriture ; l'IP locale est ensuite retirée de l'allowlist.*
+  lecture/écriture ; l'IP locale est ensuite retirée de l'allowlist. ✅ Confirmé le 2026-07-27 : cluster M0
+  créé, utilisateur applicatif dédié ajouté, connexion `mongosh` réussie, lecture/écriture/suppression
+  confirmées. Restriction réseau finale (allowlist → IP du VPS) reportée à la complétion de l'Étape 8.3.*
 
 ### 8.3 — VPS DigitalOcean & durcissement de base
 - [ ] Créer un droplet (Ubuntu LTS, plus petit plan suffisant)
