@@ -542,3 +542,21 @@
   tous les cas passent (inscription, connexion, CRUD complet, isolation entre utilisateurs, cas d'erreur
   400/401/404/409)
 - ✅ **Étape 8.4 entièrement complétée.** Prochaine étape : 8.5 (déploiement du frontend sur Vercel)
+
+## 2026-07-28 — Étape 8.5 : Déploiement du frontend (Vercel)
+
+- Projet Vercel créé, dépôt GitHub `DrumTempo` importé, Root Directory réglé sur `frontend` (le repo a
+  `frontend/` et `backend/` à la racine, pas de `package.json` racine)
+- Variable d'environnement `VITE_API_URL=https://api.drumtempo.com` configurée dans Vercel — aucun
+  changement de code nécessaire, `ApiConfig.js`/`AuthConfig.js` la consomment déjà via `import.meta.env`
+- Premier déploiement sur l'URL temporaire `drum-tempo.vercel.app` : test d'inscription échoué (`Load
+  failed`) — comportement attendu et vérifié volontairement plutôt que corrigé : `curl -X OPTIONS
+  https://api.drumtempo.com/api/auth/register -H "Origin: https://drum-tempo.vercel.app"` confirme
+  l'absence de `access-control-allow-origin` dans la réponse, cohérent avec `CORS_ORIGIN` restreint à
+  `https://app.drumtempo.com` en prod (pas d'ouverture large à `*.vercel.app`)
+- Domaine custom `app.drumtempo.com` ajouté dans Vercel ; CNAME `app` → `0fbf7447e66876b4.vercel-dns-017.com`
+  créé dans Cloudflare DNS, proxifié (nuage orange) ; domaine passé à "Valid" côté Vercel en quelques minutes
+- ✅ Confirmé le 2026-07-28 : `https://app.drumtempo.com` répond `200` (Cloudflare + Vercel), cycle complet
+  (inscription, connexion, ajout/ajustement/suppression d'exercice) testé et fonctionnel contre le backend
+  de production
+- ✅ **Étape 8.5 entièrement complétée.** Prochaine étape : 8.6 (pipeline de déploiement automatisé — CD)

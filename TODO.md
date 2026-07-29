@@ -312,11 +312,18 @@ Atlas M0 gratuits à cette échelle).
   via `@baseUrl` temporaire dans WebStorm — tous les codes de statut attendus obtenus. Voir DEVLOG pour
   l'incident OOM rencontré et corrigé (ajout de swap sur le VPS) en cours de route.*
 
-### 8.5 — Déploiement du frontend (Vercel)
-- [ ] Connecter le dépôt GitHub à Vercel, `VITE_API_URL` configuré vers `api.tondomaine.com`
-- [ ] `app.tondomaine.com` pointé vers Vercel via un enregistrement DNS Cloudflare (CNAME)
-  *Test manuel : `https://app.tondomaine.com` charge l'app ; cycle complet (inscription/connexion/CRUD)
-  fonctionne contre le backend de production.*
+### 8.5 — Déploiement du frontend (Vercel) ✅
+- [x] Connecter le dépôt GitHub à Vercel, `VITE_API_URL` configuré vers `api.drumtempo.com`
+- [x] `app.drumtempo.com` pointé vers Vercel via un enregistrement DNS Cloudflare (CNAME)
+  *Test manuel : `https://app.drumtempo.com` charge l'app ; cycle complet (inscription/connexion/CRUD)
+  fonctionne contre le backend de production.
+  ✅ Confirmé le 2026-07-28 : projet Vercel importé (Root Directory `frontend`, `VITE_API_URL` en variable
+  d'environnement), déploiement initial testé sur l'URL temporaire `drum-tempo.vercel.app` — CORS
+  correctement refusé à ce stade (confirmé via `curl -X OPTIONS` : aucun `access-control-allow-origin`,
+  cohérent avec `CORS_ORIGIN=https://app.drumtempo.com` en prod, aucune origine Vercel générique acceptée).
+  Domaine custom `app.drumtempo.com` ajouté (CNAME Cloudflare, proxifié), validé par Vercel. Cycle complet
+  (inscription/connexion/CRUD) testé et confirmé fonctionnel sur `https://app.drumtempo.com` contre
+  `https://api.drumtempo.com`.*
 
 ### 8.6 — Pipeline de déploiement automatisé (CD)
 - [ ] Vercel : déploiement automatique déjà natif via l'intégration GitHub (à vérifier/activer)
