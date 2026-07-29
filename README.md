@@ -297,6 +297,51 @@ l'Étape 6 en place, le déploiement peut être conditionné à des tests verts 
 backend vers le VPS, et déploiement automatique du frontend par Vercel/Netlify (déclenché nativement par un
 push sur la branche principale, sans configuration additionnelle côté GitHub Actions).
 
+### Déploiement effectif du backend (Étape 8.4)
+
+**Statut : implémenté.** `docker-compose.prod.yml` et `caddy/Caddyfile` sont les fichiers réels utilisés sur
+le VPS — contrairement au reste de cette section (toujours au stade documentation pour 8.5-8.7).
+
+Différences avec `docker-compose.yml` (dev) :
+- pas de service `db` (remplacé par Atlas)
+- `backend` tourne sans bind-mount (image buildée telle quelle, `npm run build && npm run start`) et
+  n'expose aucun port sur l'hôte — seul `caddy` est joignable depuis l'extérieur
+- `caddy` fait office de reverse proxy TLS devant le backend, certificat Cloudflare Origin CA (mode "Full
+  strict", voir plus haut)
+
+**Préparation ponctuelle (une seule fois) :**
+
+1. Cloudflare : SSL/TLS → mode "Full (strict)". DNS → enregistrement `A` `api` → IP du VPS, proxifié
+   (nuage orange). SSL/TLS → Origin Server → *Create Certificate* pour `api.drumtempo.com` → récupérer le
+   certificat PEM et la clé privée.
+2. Sur le VPS, dans le dossier du dépôt cloné :
+   ```sh
+   mkdir -p caddy/certs
+   # coller le certificat Cloudflare dans caddy/certs/origin.pem
+   # coller la clé privée dans caddy/certs/origin-key.pem
+   chmod 600 caddy/certs/origin-key.pem
+   ```
+3. Créer `.env.prod` à partir de `.env.prod.example` (jamais commité, reste sur le VPS) : `JWT_SECRET`
+   généré via `openssl rand -hex 64` (**distinct** du secret de dev), `MONGO_URI` = chaîne Atlas de
+   l'utilisateur applicatif dédié (Étape 8.2).
+
+**Déploiement / redéploiement :**
+
+```sh
+git pull
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
+(`docker compose`, sans tiret : le VPS a le *plugin* Docker Compose, pas le binaire autonome `docker-compose`
+utilisé en local.)
+
+**Test manuel :**
+```sh
+curl -I https://api.drumtempo.com/health   # 200, certificat valide
+```
+Puis rejouer `backend/auth.http` et `backend/exercises.http` en pointant vers `https://api.drumtempo.com`
+au lieu de `localhost:3000`.
+
 ## Recommended IDE Setup
 
 [VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).

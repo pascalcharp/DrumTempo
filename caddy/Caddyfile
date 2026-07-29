@@ -1,0 +1,7 @@
+# Certificat manuel (pas ACME) : le certificat Cloudflare Origin CA n'est pas émis via Let's Encrypt.
+# Fichiers attendus (jamais commités — voir .gitignore) : caddy/certs/origin.pem, caddy/certs/origin-key.pem
+# Généré depuis le dashboard Cloudflare (SSL/TLS > Origin Server > Create Certificate) pour api.drumtempo.com.
+api.drumtempo.com {
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+	reverse_proxy backend:3000
+}

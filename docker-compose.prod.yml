@@ -1,0 +1,46 @@
+# Compose de production — fichier autonome (pas un override du docker-compose.yml de dev, car un override
+# ne peut pas retirer un service). Usage sur le VPS :
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# Différences avec le dev :
+# - pas de service `db` (remplacé par MongoDB Atlas, voir MONGO_URI dans .env.prod)
+# - pas de bind-mount sur `backend` : l'image tourne telle que buildée, pas de live-reload
+# - `backend` n'expose aucun port sur l'hôte : seul `caddy` est joignable depuis l'extérieur
+# - ajout de `caddy` en reverse proxy TLS devant le backend
+services:
+  backend:
+    container_name: drumtempo-backend
+    build: ./backend
+    command: sh -c "npm run build && npm run start"
+    environment:
+      PORT: ${PORT}
+      MONGO_URI: ${MONGO_URI}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS}
+    networks:
+      - drumtempo-net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: drumtempo-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/certs:/etc/caddy/certs:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+    networks:
+      - drumtempo-net
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  drumtempo-net:
