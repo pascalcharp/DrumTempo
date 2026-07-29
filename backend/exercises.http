@@ -5,6 +5,7 @@
 ### les variables globales tokenUserA / tokenUserB — toutes les routes ci-dessous sont protégées.
 
 @baseUrl = http://localhost:3000/api/exercises
+//@baseUrl = https://api.drumtempo.com/api/exercises
 
 ### 0. Sans token (401 attendu)
 GET {{baseUrl}}

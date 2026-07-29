@@ -296,16 +296,21 @@ Atlas M0 gratuits à cette échelle).
   par mot de passe refusée, login root SSH désactivé (`PermitRootLogin no`), `ufw` actif (22/80/443 en
   ALLOW), Docker et Docker Compose installés et fonctionnels (`docker run hello-world` réussi).*
 
-### 8.4 — Déploiement du backend (Caddy + conteneur backend)
-- [ ] `docker-compose.prod.yml` (ou override) : retrait du service `db` (remplacé par Atlas), `MONGO_URI`
-  pointé vers Atlas, ajout de Caddy comme reverse proxy devant le conteneur backend
-- [ ] `Caddyfile` : `api.tondomaine.com` → conteneur backend, TLS via certificat Cloudflare Origin CA (mode
+### 8.4 — Déploiement du backend (Caddy + conteneur backend) ✅
+- [x] `docker-compose.prod.yml` (fichier autonome, pas un override) : retrait du service `db` (remplacé par
+  Atlas), `MONGO_URI` pointé vers Atlas, ajout de Caddy comme reverse proxy devant le conteneur backend
+- [x] `Caddyfile` : `api.drumtempo.com` → conteneur backend, TLS via certificat Cloudflare Origin CA (mode
   "Full strict", comme documenté en 5.8)
-- [ ] `CORS_ORIGIN` mis à jour avec le domaine Vercel définitif (`app.tondomaine.com`)
-- [ ] Secrets de production (`JWT_SECRET`, `MONGO_URI`) dans un `.env` local au VPS uniquement, jamais
+- [x] `CORS_ORIGIN` mis à jour avec le domaine Vercel définitif (`app.drumtempo.com`)
+- [x] Secrets de production (`JWT_SECRET`, `MONGO_URI`) dans un `.env.prod` local au VPS uniquement, jamais
   commité (même principe que 5.2, nouvel environnement)
-  *Test manuel : `https://api.tondomaine.com/health` répond 200 avec certificat valide (cadenas navigateur) ;
-  `auth.http`/`exercises.http` rejoués contre l'URL de production.*
+  *Test manuel : `https://api.drumtempo.com/health` répond 200 avec certificat valide (cadenas navigateur) ;
+  `auth.http`/`exercises.http` rejoués contre l'URL de production.
+  ✅ Confirmé le 2026-07-28 : `curl -Iv https://api.drumtempo.com/health` → `200`, TLS 1.3, chaîne de
+  certificat valide (Cloudflare edge), en-têtes `helmet` présents. `auth.http` (inscription/connexion,
+  9 cas) et `exercises.http` (CRUD + isolation entre utilisateurs, 0-10) rejoués contre l'URL de production
+  via `@baseUrl` temporaire dans WebStorm — tous les codes de statut attendus obtenus. Voir DEVLOG pour
+  l'incident OOM rencontré et corrigé (ajout de swap sur le VPS) en cours de route.*
 
 ### 8.5 — Déploiement du frontend (Vercel)
 - [ ] Connecter le dépôt GitHub à Vercel, `VITE_API_URL` configuré vers `api.tondomaine.com`

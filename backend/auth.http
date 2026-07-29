@@ -3,7 +3,8 @@
 ### Prérequis : backend démarré (docker-compose up, ou npm run dev dans /backend), base réinitialisée
 ### (voir README.md, section "Réinitialiser la base") pour repartir sans utilisateur existant.
 
-@baseUrl = http://localhost:3000/api/auth
+//  @baseUrl = http://localhost:3000/api/auth
+@baseUrl = https://api.drumtempo.com/api/auth
 
 ### 1. Inscription valide de l'utilisateur A (201 attendu)
 POST {{baseUrl}}/register

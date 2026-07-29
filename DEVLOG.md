@@ -512,3 +512,33 @@
   depuis le poste local — preuve que l'allowlist est bien restrictive
 - ✅ **Étape 8.2 entièrement complétée.** Prochaine étape : 8.4 (déploiement du backend — Caddy + conteneur
   backend)
+## 2026-07-28 — Étape 8.4 : Déploiement du backend (Caddy + conteneur backend)
+
+- Cloudflare : mode SSL/TLS basculé à "Full (strict)" ; enregistrement DNS `A` `api` → IP du VPS
+  (`142.93.146.19`), proxifié (nuage orange) ; certificat Origin Server généré pour `api.drumtempo.com`
+  (RSA 2048, validité 15 ans)
+- Fichiers ajoutés au dépôt : `docker-compose.prod.yml` (fichier autonome, pas un override — un override
+  Compose ne peut pas retirer un service ; sans `db`, `backend` sans bind-mount ni port publié sur l'hôte,
+  ajout du service `caddy`), `caddy/Caddyfile` (TLS manuel via le certificat Origin CA — pas d'ACME),
+  `.env.prod.example` (toutes les variables prod du backend réunies en un seul fichier, faute de bind-mount
+  `backend/.env` en prod). Corrigé au passage : `backend/.dockerignore` ne contenait pas `.env`, ce qui
+  aurait permis à un `.env` de dev de se retrouver copié dans l'image au build
+- Sur le VPS : certificat + clé privée collés dans `caddy/certs/` (`chmod 600` sur la clé, jamais commité),
+  `.env.prod` créé (JWT_SECRET généré via `openssl rand -hex 64`, distinct du secret de dev ; `MONGO_URI`
+  = utilisateur applicatif Atlas)
+- **Incident rencontré et résolu** : premier `docker compose -f docker-compose.prod.yml --env-file .env.prod
+  up -d --build` — le build de l'image a réussi, mais le conteneur `backend` s'est fait tuer (`Exited 137`)
+  juste après le message `tsc`, sans autre erreur explicite. Diagnostic : le droplet DigitalOcean (le plus
+  petit plan, 458 Mio de RAM, **aucun swap**) n'a pas assez de mémoire pour que `tsc` compile le backend au
+  démarrage du conteneur (`command: npm run build && npm run start`) — code de sortie 137 = SIGKILL,
+  signature classique de l'OOM killer du noyau. Corrigé en ajoutant un fichier swap de 1 Gio sur le VPS
+  (`fallocate`/`mkswap`/`swapon` + entrée `/etc/fstab` pour survivre à un reboot) — solution standard
+  recommandée par DigitalOcean pour ce plan. Deuxième tentative : `tsc` a compilé (lentement, via le swap),
+  le serveur a démarré normalement, connexion à Atlas confirmée dans les logs
+- ✅ Confirmé le 2026-07-28 : `curl -Iv https://api.drumtempo.com/health` → `HTTP/2 200`, TLS 1.3, chaîne de
+  certificat valide, en-têtes `helmet` présents, `server: cloudflare` (confirme le passage par l'edge
+  Cloudflare, pas un accès direct au VPS). `auth.http` et `exercises.http` rejoués contre
+  `https://api.drumtempo.com` (via `@baseUrl` temporaire dans WebStorm, remis à `localhost:3000` ensuite) —
+  tous les cas passent (inscription, connexion, CRUD complet, isolation entre utilisateurs, cas d'erreur
+  400/401/404/409)
+- ✅ **Étape 8.4 entièrement complétée.** Prochaine étape : 8.5 (déploiement du frontend sur Vercel)
