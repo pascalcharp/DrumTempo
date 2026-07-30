@@ -342,10 +342,17 @@ Atlas M0 gratuits à cette échelle).
   (push sur `main` → tests verts → déploiement déclenché → conteneur `backend` recréé → `/health` toujours
   200). Deux incidents de collage rencontrés et corrigés en cours de route (voir DEVLOG.md).
 
-### 8.7 — Vérification finale de bout en bout en production
-- [ ] Reprendre le scénario de test manuel de l'Étape 7 (inscription/connexion/CRUD/persistance/
+### 8.7 — Vérification finale de bout en bout en production ✅
+- [x] Reprendre le scénario de test manuel de l'Étape 7 (inscription/connexion/CRUD/persistance/
   déconnexion), cette fois sur les URLs de production, idéalement depuis un iPhone en réseau cellulaire
   (pas seulement en Wi-Fi local)
   *Test manuel : cycle complet réussi en conditions réelles d'utilisation.*
+  ✅ Confirmé le 2026-07-30 : cycle complet (inscription, connexion, ajout/ajustement/suppression
+  d'exercice, persistance après rafraîchissement, déconnexion, retour à l'écran de connexion après
+  rafraîchissement) réussi sur `https://app.drumtempo.com` depuis un iPhone en réseau cellulaire (pas de
+  Wi-Fi) — confirme le chemin production complet de bout en bout.
 
-**Étape 7 (frontend — intégration de l'authentification) entièrement complétée.**
+**Étape 8 (déploiement en production) entièrement complétée.** Application en production complète et
+fonctionnelle : backend (Caddy/Cloudflare/DigitalOcean/MongoDB Atlas), frontend (Vercel), pipeline CD
+(GitHub Actions → VPS), vérifiée de bout en bout sur `https://app.drumtempo.com` depuis un iPhone en
+réseau cellulaire. Aucune étape suivante définie pour l'instant — prochaines priorités à déterminer.

@@ -597,3 +597,15 @@
   depuis moins de 5 minutes)
 - ✅ **Étape 8.6 entièrement complétée.** Prochaine étape : 8.7 (vérification finale de bout en bout en
   production, idéalement depuis un iPhone en réseau cellulaire)
+
+## 2026-07-30 — Étape 8.7 : Vérification finale de bout en bout en production
+
+- Reprise du scénario de test manuel de l'Étape 7.3, cette fois sur `https://app.drumtempo.com`, depuis un
+  iPhone en réseau cellulaire (Wi-Fi désactivé) — élimine tout raccourci réseau local et confirme le
+  chemin production complet : Cloudflare → Vercel (frontend) / Cloudflare → Caddy → backend → MongoDB
+  Atlas
+- ✅ Confirmé le 2026-07-30 : inscription, connexion, ajout/ajustement/suppression d'exercice, persistance
+  après rafraîchissement, déconnexion, retour à l'écran de connexion après rafraîchissement — cycle complet
+  réussi
+- ✅ **Étape 8.7 entièrement complétée. Étape 8 (déploiement en production) entièrement complétée.**
+  L'application DrumTempo est en production complète et fonctionnelle sur `https://app.drumtempo.com`.
