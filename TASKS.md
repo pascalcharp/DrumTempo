@@ -12,6 +12,26 @@ Le développement initial (Étapes 0 à 8) est archivé dans `TODO.md`.
 
 ## Tâches
 
+### P3
+- [ ] Réorganisation complète de la documentation : `README.md` devient le point d'entrée unique vers
+  toute la documentation du projet, structuré en 6 sections :
+  1. Présentation du projet + survol de la pile technologique
+  2. Build et lancement, y compris en installation locale (comme durant le développement)
+  3. Comment collaborer
+  4. Comment tester
+  5. Prérequis : dépendances, système
+  6. Structure du projet : catalogue des fichiers et de leur fonction
+  Objectif : une personne voulant collaborer doit pouvoir comprendre le repo sans effort.
+
+### P4
+- [ ] Messages d'erreur réseau bruts affichés à l'utilisateur : quand `fetch()` échoue avant même de
+  recevoir une réponse (coupure réseau, perte de signal cellulaire, timeout), le navigateur lève une
+  erreur avec un message technique brut (ex: `"Load failed"` sur Safari/iPhone, `"Failed to fetch"` sur
+  Chrome) qui est affiché tel quel dans l'UI (`App.vue`, `erreur.value = error.message`). `httpClient.js`
+  ne reformule ce message convivial (`ApiConfig.messageErreurHttpParDefaut`) que pour les erreurs HTTP
+  (réponse reçue avec statut d'erreur), pas pour les échecs réseau en amont. À corriger : détecter ce cas
+  (ex: `TypeError` sans `.status`) et afficher un message clair type "Problème de connexion, réessaie."
+
 ### P5
 - [ ] UX inscription : le flux prend 2 clics (bascule de mode + soumission) et enchaîne directement sur
   la connexion sans écran de confirmation intermédiaire. Pas un bogue — comportement voulu à l'Étape 7 —
