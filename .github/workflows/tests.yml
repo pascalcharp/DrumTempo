@@ -42,3 +42,16 @@ jobs:
       - name: Lancer les tests
         working-directory: frontend
         run: npm test
+
+  deploy-backend:
+    needs: backend-tests
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déclencher le déploiement sur le VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: echo "Déploiement déclenché (la commande forcée côté VPS gère le reste)"
