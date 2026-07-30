@@ -39,13 +39,19 @@ L'application est divisée en 3 conteneurs orchestrés par `docker-compose.yml` 
 - Les tests doivent être clairement énoncés et décrits
 - Je roule moi-même les tests dans l'IDE
 
-## Fichier TODO.md
+## Fichier TASKS.md
 
-    - La liste des tâches à accomplir est dans le fichier TODO.md.  
+    - `TODO.md` documentait le développement initial (Étapes 0 à 8) et est maintenant clos/archivé —
+      ne plus y ajouter de tâches.
 
-    - Dès qu'une tâche est accomplie: 
-         - on marque cette tâche comme terminée dans TODO.md
-         - on met à jour la priorité des tâches dans TODO.md.  J'ai le mot final pour approuver ce plan de travail.
+    - La liste des tâches futures (améliorations, nouvelles fonctionnalités, corrections de bogues) est
+      dans le fichier TASKS.md.
+
+    - Chaque tâche a une priorité, de P1 (immédiat, bogue critique) à P5 (cool à faire dans le futur).
+
+    - Dès qu'une tâche est accomplie ou ajoutée:
+         - on marque cette tâche comme terminée dans TASKS.md (ou on l'ajoute avec sa priorité)
+         - on met à jour la priorité des autres tâches dans TASKS.md. J'ai le mot final pour approuver ce plan de travail.
 
 ## Fichier DEVLOG.md
 

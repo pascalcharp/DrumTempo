@@ -1,5 +1,9 @@
 # Plan de Travail - DrumTempo
 
+> **Archivé le 2026-07-30.** Ce fichier documente le développement initial (Étapes 0 à 8, du scaffold
+> jusqu'au déploiement en production). Il est clos — plus aucune tâche n'y sera ajoutée. Les tâches
+> futures (améliorations, nouvelles fonctionnalités, corrections de bogues) sont dans `TASKS.md`.
+
 ## Étape 0 : Réorganisation du scaffold existant
 - [x] Déplacer le scaffold Vue 3 (src/, public/, index.html, vite.config.js, etc.) dans `/frontend`
 - [x] Supprimer les composants par défaut (`HelloWorld.vue`, `TheWelcome.vue`, `WelcomeItem.vue`, `assets/logo.svg`)
