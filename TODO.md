@@ -325,12 +325,22 @@ Atlas M0 gratuits à cette échelle).
   (inscription/connexion/CRUD) testé et confirmé fonctionnel sur `https://app.drumtempo.com` contre
   `https://api.drumtempo.com`.*
 
-### 8.6 — Pipeline de déploiement automatisé (CD)
-- [ ] Vercel : déploiement automatique déjà natif via l'intégration GitHub (à vérifier/activer)
-- [ ] Backend : étendre `.github/workflows` avec un job de déploiement (déclenché après succès des tests sur
+### 8.6 — Pipeline de déploiement automatisé (CD) ✅
+- [x] Vercel : déploiement automatique déjà natif via l'intégration GitHub (à vérifier/activer)
+- [x] Backend : étendre `.github/workflows` avec un job de déploiement (déclenché après succès des tests sur
   `main`) qui se connecte au VPS et relance les conteneurs avec la nouvelle image
   *Test manuel : un commit sur `main` déclenche tests → déploiement automatique → nouvelle version visible
   en production, sans intervention manuelle.*
+  ✅ Confirmé le 2026-07-30 : Vercel — "Production Branch" = `main` confirmé, "Ignored Build Step" =
+  `Automatic` (build sautée si aucun changement dans `frontend/`, comportement voulu pour un monorepo).
+  Backend — nouveau job `deploy-backend` dans `.github/workflows/tests.yml` (`needs: backend-tests`,
+  `if: github.ref == 'refs/heads/main' && github.event_name == 'push'`), via `appleboy/ssh-action@v1` et
+  une paire de clés SSH dédiée (`~/.ssh/drumtempo_deploy`, jamais la clé perso) restreinte côté VPS par une
+  commande forcée dans `authorized_keys` (`command="~/deploy.sh",no-port-forwarding,no-X11-forwarding,
+  no-agent-forwarding ...`) — même si le secret GitHub fuit, aucun accès shell général n'est possible.
+  Cas négatif testé (push sur une branche non-`main` → `deploy-backend` n'apparaît pas). Cas positif testé
+  (push sur `main` → tests verts → déploiement déclenché → conteneur `backend` recréé → `/health` toujours
+  200). Deux incidents de collage rencontrés et corrigés en cours de route (voir DEVLOG.md).
 
 ### 8.7 — Vérification finale de bout en bout en production
 - [ ] Reprendre le scénario de test manuel de l'Étape 7 (inscription/connexion/CRUD/persistance/

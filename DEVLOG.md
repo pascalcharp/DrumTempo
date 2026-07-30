@@ -560,3 +560,40 @@
   (inscription, connexion, ajout/ajustement/suppression d'exercice) testé et fonctionnel contre le backend
   de production
 - ✅ **Étape 8.5 entièrement complétée.** Prochaine étape : 8.6 (pipeline de déploiement automatisé — CD)
+
+## 2026-07-30 — Étape 8.6 : Pipeline de déploiement automatisé (CD)
+
+- Vercel : vérifié dans Settings → Git que "Production Branch" = `main` et "Ignored Build Step" =
+  `Automatic` (Vercel compare le commit courant à la dernière build et ne redéclenche que si `frontend/` a
+  changé — comportement voulu pour ce monorepo, rien à activer, c'était déjà natif depuis l'import en 8.5)
+- Backend : paire de clés SSH dédiée générée localement (`~/.ssh/drumtempo_deploy`, jamais la clé perso de
+  8.3) — clé privée copiée directement dans le presse-papier (`pbcopy`) pour être collée comme secret
+  GitHub sans jamais transiter par le chat. Trois secrets ajoutés au repo (`DEPLOY_SSH_KEY`, `DEPLOY_HOST`,
+  `DEPLOY_USER`)
+- Clé publique installée dans `~/.ssh/authorized_keys` du VPS avec une commande forcée
+  (`command="~/deploy.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding ...`) : même si le
+  secret GitHub fuit un jour, cette clé ne permet rien d'autre que de relancer le déploiement, jamais un
+  accès shell général
+- Nouveau job `deploy-backend` dans `.github/workflows/tests.yml` : `needs: backend-tests`,
+  `if: github.ref == 'refs/heads/main' && github.event_name == 'push'`, utilise `appleboy/ssh-action@v1` —
+  le `script:` envoyé est un simple echo, ignoré de toute façon puisque la commande forcée côté VPS prend
+  le dessus
+- ⚠️ Incident (x2) : le collage de la ligne `command="..."` dans le terminal SSH a coupé la ligne en deux
+  (retour à la ligne inséré au milieu), cassant le format `authorized_keys` — première fois la commande
+  forcée manquait sa clé (ligne suivante devenue une clé *sans* restriction, faille de sécurité), deuxième
+  fois seul le commentaire optionnel s'est détaché (sans impact fonctionnel, mais nettoyé quand même).
+  Diagnostiqué via `cat -A ~/.ssh/authorized_keys` (repère les fins de ligne réelles). Corrigé en déplaçant
+  la commande dans un script dédié `~/deploy.sh` (ligne `authorized_keys` beaucoup plus courte, moins
+  exposée au bug de collage) — leçon retenue : éviter de coller de très longues lignes uniques dans un
+  terminal SSH interactif
+- ⚠️ Bug de frappe repéré dans `~/deploy.sh` lors de sa création : shebang `#!/bin/bash/` (slash final en
+  trop, chemin invalide) — corrigé en `#!/bin/bash`. Permissions resserrées à `700` (propriétaire seulement,
+  le `750`/groupe n'étant pas nécessaire pour un script invoqué par une commande forcée SSH)
+- ✅ Confirmé le 2026-07-30 : cas négatif testé (push sur branche `test/cd-negatif` → job `deploy-backend`
+  absent des jobs déclenchés, confirmant le filtre `if:`). Cas positif testé (merge fast-forward de
+  `test/cd-negatif` dans `main`, push → `backend-tests` vert → `deploy-backend` déclenché → logs GitHub
+  Actions montrent `git pull` réel, build Docker complet, `Container drumtempo-backend Recreate →
+  Recreated → Started` → `curl -I https://api.drumtempo.com/health` toujours `200`, conteneur backend up
+  depuis moins de 5 minutes)
+- ✅ **Étape 8.6 entièrement complétée.** Prochaine étape : 8.7 (vérification finale de bout en bout en
+  production, idéalement depuis un iPhone en réseau cellulaire)
