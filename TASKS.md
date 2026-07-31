@@ -23,6 +23,11 @@ Le développement initial (Étapes 0 à 8) est archivé dans `TODO.md`.
   6. Structure du projet : catalogue des fichiers et de leur fonction
   Objectif : une personne voulant collaborer doit pouvoir comprendre le repo sans effort.
 
+- [ ] Catégorisation des exercices : les exercices peuvent être classés par catégorie (ex: rudiments,
+  patterns, exercices techniques). La catégorie `rudiments` existe par défaut et comprend d'emblée les 40
+  rudiments de base internationaux (Percussive Arts Society). Implique un changement au modèle de données
+  (`exercises`, ajout d'un champ catégorie) et une donnée d'amorçage (seed) pour les 40 rudiments.
+
 ### P4
 - [ ] Messages d'erreur réseau bruts affichés à l'utilisateur : quand `fetch()` échoue avant même de
   recevoir une réponse (coupure réseau, perte de signal cellulaire, timeout), le navigateur lève une
