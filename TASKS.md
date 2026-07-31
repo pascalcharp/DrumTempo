@@ -12,6 +12,12 @@ Le développement initial (Étapes 0 à 8) est archivé dans `TODO.md`.
 
 ## Tâches
 
+### P2
+- [ ] Confirmation avant suppression d'un exercice : le bouton "Supprimer" dans `ExerciseList.vue`
+  (`supprimerExercice`) déclenche la suppression immédiatement, sans confirmation — une erreur de clic
+  (facile sur mobile) entraîne une perte de données irréversible. À ajouter : un splash/dialogue
+  "Êtes-vous certain?" avant d'émettre l'événement `supprimer`.
+
 ### P3
 - [ ] Réorganisation complète de la documentation : `README.md` devient le point d'entrée unique vers
   toute la documentation du projet, structuré en 6 sections :
@@ -36,6 +42,11 @@ Le développement initial (Étapes 0 à 8) est archivé dans `TODO.md`.
   ne reformule ce message convivial (`ApiConfig.messageErreurHttpParDefaut`) que pour les erreurs HTTP
   (réponse reçue avec statut d'erreur), pas pour les échecs réseau en amont. À corriger : détecter ce cas
   (ex: `TypeError` sans `.status`) et afficher un message clair type "Problème de connexion, réessaie."
+
+- [ ] Historique des tempos : conserver l'évolution dans le temps du `current_tempo` de chaque exercice
+  (actuellement seule la valeur courante est stockée, l'ancienne est perdue à chaque mise à jour).
+  Éventuellement, permettre de grapher cette progression. Implique un nouveau modèle de données
+  (ex: collection `tempo_history` avec exercice, tempo, date) et une décision sur la rétention.
 
 ### P5
 - [ ] UX inscription : le flux prend 2 clics (bascule de mode + soumission) et enchaîne directement sur

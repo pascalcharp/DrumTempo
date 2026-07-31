@@ -608,4 +608,19 @@
   après rafraîchissement, déconnexion, retour à l'écran de connexion après rafraîchissement — cycle complet
   réussi
 - ✅ **Étape 8.7 entièrement complétée. Étape 8 (déploiement en production) entièrement complétée.**
+
+## 2026-07-31 — Correction d'un test flaky : unicité `name`+`owner` sur `Exercise`
+
+- Bogue signalé : le test `impose l'unicité du name par owner...` (`Exercise.test.ts`) échouait sur GitHub
+  Actions alors qu'il passait systématiquement en local
+- Cause racine : `backend/src/test/setup.ts` connecte Mongoose à un serveur MongoDB en mémoire tout neuf
+  (`MongoMemoryServer`) à chaque run, mais `mongoose.connect()` ne garantit pas que les index (dont
+  l'unicité `{name, owner}` sur `Exercise`) soient déjà construits sur le serveur — leur création est
+  asynchrone. Le test d'unicité pouvait donc s'exécuter avant que l'index existe et laisser passer un
+  duplicata. Condition de course plus visible en CI (base toujours neuve, latence variable) qu'en local
+- Correctif : ajout de `await Promise.all(mongoose.modelNames().map((name) => mongoose.model(name).init()))`
+  dans le `beforeAll` de `setup.ts`, juste après la connexion, pour attendre explicitement la construction
+  de tous les index avant que les tests ne démarrent
+- ✅ Robustesse vérifiée le 2026-07-31 : script Python de stress-test relançant le test d'unicité 1000 fois
+  de suite (chaque run avec une base en mémoire fraîchement créée) — 1000/1000 réussites, 0 échec (~14 min)
   L'application DrumTempo est en production complète et fonctionnelle sur `https://app.drumtempo.com`.
