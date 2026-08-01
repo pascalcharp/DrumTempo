@@ -13,6 +13,15 @@ Le développement initial (Étapes 0 à 8) est archivé dans `TODO.md`.
 ## Tâches
 
 ### P2
+- [ ] Vérification du courriel à l'inscription : actuellement (`backend/src/models/User.ts`,
+  `backend/src/routes/authRoutes.ts`), un compte est créé et utilisable immédiatement avec n'importe
+  quel courriel, même invalide ou appartenant à quelqu'un d'autre — aucune vérification n'est faite.
+  À ajouter : à l'inscription, générer un jeton de vérification à usage unique et à durée de vie
+  limitée, l'envoyer par courriel via un lien sécurisé (ex: `/verify-email?token=...`), et marquer le
+  compte comme non vérifié (`emailVerified: false`) tant que le lien n'a pas été suivi. Implique un
+  changement au modèle `User` (champs `emailVerified`, `verificationToken`, expiration) et l'ajout d'un
+  service d'envoi de courriel (actuellement absent du projet — à choisir).
+
 - [ ] Confirmation avant suppression d'un exercice : le bouton "Supprimer" dans `ExerciseList.vue`
   (`supprimerExercice`) déclenche la suppression immédiatement, sans confirmation — une erreur de clic
   (facile sur mobile) entraîne une perte de données irréversible. À ajouter : un splash/dialogue
