@@ -624,3 +624,14 @@
 - ✅ Robustesse vérifiée le 2026-07-31 : script Python de stress-test relançant le test d'unicité 1000 fois
   de suite (chaque run avec une base en mémoire fraîchement créée) — 1000/1000 réussites, 0 échec (~14 min)
   L'application DrumTempo est en production complète et fonctionnelle sur `https://app.drumtempo.com`.
+
+## 2026-08-01 — Ajout de `scripts/health-check.sh`
+
+- Nouveau script `scripts/health-check.sh` : vérifie l'état de la prod en un coup d'œil (health check
+  HTTP sur `https://api.drumtempo.com/health`, absence d'erreurs dans les logs `backend` des 10 dernières
+  minutes, conteneurs `drumtempo-backend` et `drumtempo-caddy` bien `Up`) et affiche `Status OK` ou la
+  liste des problèmes détectés
+- Poussé sur `main` → déploiement automatique via le pipeline CI/CD existant (`git pull` + rebuild sur le
+  VPS, voir Étape 8.6)
+- ✅ Confirmé le 2026-08-01 sur le VPS : script bien présent dans `~/drumtempo/scripts/health-check.sh`,
+  exécutable, exécution donne `Status OK`
